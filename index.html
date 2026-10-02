@@ -57,7 +57,7 @@
 
     .crystal-3 {
       width: 180px; height: 180px;
-      border: 2px stroke;
+      border: 2px solid transparent;
       border-image: linear-gradient(135deg, rgba(56, 189, 248, 0.5), rgba(168, 85, 247, 0.2)) 1;
       border-radius: 50%;
       top: 35%; left: 20%;
@@ -75,7 +75,7 @@
     @keyframes floatShape {
       0% { transform: translateY(0px) rotate(0deg) scale(1); }
       50% { transform: translateY(-35px) rotate(180deg) scale(1.08); }
-      100% { transform: translateY(360deg) scale(0.95); }
+      100% { transform: translateY(20px) rotate(360deg) scale(0.95); }
     }
 
     /* クリスタルグラスカード */
@@ -200,8 +200,8 @@
             <i data-lucide="plus-circle" class="w-4 h-4 text-sky-600"></i> 新規タスクの登録
           </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            <input type="text" id="task-title" placeholder="タスク内容" class="col-span-1 sm:col-span-2 px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-sky-400 focus:bg-white focus:outline-none transition-all">
-            <input type="text" id="task-team" placeholder="担当チーム / 名前" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-sky-400 focus:bg-white focus:outline-none transition-all">
+            <input type="text" id="task-title" onkeypress="if(event.key==='Enter') addTask()" placeholder="タスク内容" class="col-span-1 sm:col-span-2 px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-sky-400 focus:bg-white focus:outline-none transition-all">
+            <input type="text" id="task-team" onkeypress="if(event.key==='Enter') addTask()" placeholder="担当チーム / 名前" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-sky-400 focus:bg-white focus:outline-none transition-all">
             <input type="date" id="task-due" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-sky-400 focus:bg-white focus:outline-none transition-all">
             <button onclick="addTask()" class="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 active:scale-95">
               <i data-lucide="plus" class="w-4 h-4"></i> 追加
@@ -238,9 +238,9 @@
             <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> 対象企業・団体の追加
           </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            <input type="text" id="hotel-name" placeholder="企業・団体名" class="col-span-1 sm:col-span-2 px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:bg-white focus:outline-none transition-all">
-            <input type="text" id="hotel-date" placeholder="打診日 (例: 10/06)" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:bg-white focus:outline-none transition-all">
-            <input type="text" id="hotel-loc" placeholder="設置予定場所" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:bg-white focus:outline-none transition-all">
+            <input type="text" id="hotel-name" onkeypress="if(event.key==='Enter') addHotel()" placeholder="企業・団体名" class="col-span-1 sm:col-span-2 px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:bg-white focus:outline-none transition-all">
+            <input type="text" id="hotel-date" onkeypress="if(event.key==='Enter') addHotel()" placeholder="打診日 (例: 10/06)" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:bg-white focus:outline-none transition-all">
+            <input type="text" id="hotel-loc" onkeypress="if(event.key==='Enter') addHotel()" placeholder="設置予定場所" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:bg-white focus:outline-none transition-all">
             <button onclick="addHotel()" class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 active:scale-95">
               <i data-lucide="plus" class="w-4 h-4"></i> 追加
             </button>
@@ -276,27 +276,27 @@
 
   <script>
     const defaultTasks = [
-      { id: 1, title: '打診用A4資料・メール本文の完成', team: '交渉チーム', due: '2026-10-03', status: '完了' },
-      { id: 2, title: '卓上アクリルサイン試作（角R加工＋UV印刷）', team: 'デザインチーム', due: '2026-10-03', status: '進行中' },
-      { id: 3, title: '特設Webサイト（リダイレクト枠・多言語）骨組作成', team: 'Webチーム', due: '2026-10-04', status: '進行中' },
+      { id: 1, title: '海のサインプロジェクト 打診用A4資料・メール本文の完成', team: '交渉チーム', due: '2026-10-03', status: '完了' },
+      { id: 2, title: '海のサイン 卓上アクリルサイン試作（角R加工＋UV印刷）', team: 'デザインチーム', due: '2026-10-03', status: '進行中' },
+      { id: 3, title: '海のサインプロジェクト 特設Webサイト骨組作成', team: 'Webチーム', due: '2026-10-04', status: '進行中' },
       { id: 4, title: '二次元コード飛び先Googleフォーム作成', team: 'Webチーム', due: '2026-10-05', status: '未着手' },
-      { id: 5, title: '指導教員への送信前最終確認・承認', team: '全チーム', due: '2026-10-05', status: '未着手' },
-      { id: 6, title: 'ターゲット4ホテルへのメール一斉送信', team: '交渉チーム', due: '2026-10-06', status: '未着手' }
+      { id: 5, title: '海のサインプロジェクト チーム内送信前最終確認', team: '全チーム', due: '2026-10-05', status: '未着手' },
+      { id: 6, title: 'ターゲット4施設へのメール一斉送信', team: '交渉チーム', due: '2026-10-06', status: '未着手' }
     ];
 
     const defaultHotels = [
-      { id: 1, name: 'オリエンタルホテル 沖縄リゾート＆スパ', date: '10/06(火)', status: '送信準備中', location: 'フロント/マリン受付', material: '未', memo: '教員直通連絡先を明記して送信' },
-      { id: 2, name: 'TWINLINE HOTEL YANBARU OKINAWA JAPAN', date: '10/06(火)', status: '送信準備中', location: 'ロビーカウンター', material: '未', memo: '教員直通連絡先を明記して送信' },
-      { id: 3, name: 'ホテルゆがふいんおきなわ', date: '10/06(火)', status: '送信準備中', location: '1階フロント卓上', material: '未', memo: '教員直通連絡先を明記して送信' },
-      { id: 4, name: 'オクマ プライベートビーチ ＆ リゾート', date: '10/06(火)', status: '送信準備中', location: 'ビーチ受付カウンター', material: '未', memo: '教員直通連絡先を明記して送信' }
+      { id: 1, name: 'オリエンタルホテル 沖縄リゾート＆スパ', date: '10/06(火)', status: '送信準備中', location: 'フロント/マリン受付', material: '未', memo: '海のサインプロジェクト専用連絡先を明記して送信' },
+      { id: 2, name: 'TWINLINE HOTEL YANBARU OKINAWA JAPAN', date: '10/06(火)', status: '送信準備中', location: 'ロビーカウンター', material: '未', memo: '海のサインプロジェクト専用連絡先を明記して送信' },
+      { id: 3, name: 'ホテルゆがふいんおきなわ', date: '10/06(火)', status: '送信準備中', location: '1階フロント卓上', material: '未', memo: '海のサインプロジェクト専用連絡先を明記して送信' },
+      { id: 4, name: 'オクマ プライベートビーチ ＆ リゾート', date: '10/06(火)', status: '送信準備中', location: 'ビーチ受付カウンター', material: '未', memo: '海のサインプロジェクト専用連絡先を明記して送信' }
     ];
 
-    let tasks = JSON.parse(localStorage.getItem('umi_tasks_v13')) || defaultTasks;
-    let hotels = JSON.parse(localStorage.getItem('umi_hotels_v13')) || defaultHotels;
+    let tasks = JSON.parse(localStorage.getItem('umi_tasks_v14')) || defaultTasks;
+    let hotels = JSON.parse(localStorage.getItem('umi_hotels_v14')) || defaultHotels;
 
     function saveData() {
-      localStorage.setItem('umi_tasks_v13', JSON.stringify(tasks));
-      localStorage.setItem('umi_hotels_v13', JSON.stringify(hotels));
+      localStorage.setItem('umi_tasks_v14', JSON.stringify(tasks));
+      localStorage.setItem('umi_hotels_v14', JSON.stringify(hotels));
       updateStats();
     }
 
@@ -434,9 +434,12 @@
     function resetTasks() { tasks = [...defaultTasks]; saveData(); renderTasks(); }
     function resetHotels() { hotels = [...defaultHotels]; saveData(); renderHotels(); }
 
-    renderTasks();
-    renderHotels();
-    updateStats();
+    document.addEventListener('DOMContentLoaded', () => {
+      renderTasks();
+      renderHotels();
+      updateStats();
+      lucide.createIcons();
+    });
   </script>
 </body>
 </html>
