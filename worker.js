@@ -76,15 +76,19 @@ export default {
   // ② Cloudflare Cron Trigger (定期自動実行エンジン)
   // -------------------------------------------------------------
   async scheduled(event, env, ctx) {
-    // 必須の環境変数がセットされていない場合は処理を中断
-    if (!env.DISCORD_WEBHOOK_URL || !env.DB) {
-      console.error("DISCORD_WEBHOOK_URL または DB バインドが設定されていません。");
+    if (!env.DB) {
+      console.error("DB バインドが設定されていません。");
+      return;
+    }
+
+    // 💡 DISCORD_WEBHOOK_URL が設定されていない場合はログを出して安全にスキップ
+    if (!env.DISCORD_WEBHOOK_URL) {
+      console.log("DISCORD_WEBHOOK_URL が設定されていないため、Discord通知処理をスキップします。");
       return;
     }
 
     try {
       // D1 データベースから「未完了」かつ「期限切れ、または期限まで2日以内」のタスクを全自動抽出
-      // (JST/日本時間を基準にするため、+9 hours を指定)
       const { results } = await env.DB.prepare(`
         SELECT title, team, due, status 
         FROM tasks 
@@ -95,33 +99,29 @@ export default {
         ORDER BY due ASC
       `).all();
 
-      // 対象となるタスクがなければ通知を送らず正常終了
       if (!results || results.length === 0) {
         console.log("通知対象の未完了タスクはありません。");
         return;
       }
 
-      // Discordに読みやすく整えて掲載するテキストを整形
       const taskListText = results.map(t => {
         const isOverdue = new Date(t.due) < new Date();
-        const alertMark = isOverdue ? '🚨 【期限切れ】' : '⚠️ 【直近期限】';
+        const alertMark = isOverdue ? '🚨 【期限切れ】' : '⚠️️ 【直近期限】';
         return `${alertMark} **${t.title}**\n・担当: ${t.team} | 状態: ${t.status} | 期限: **${t.due}**`;
       }).join('\n\n');
 
-      // Discord Webhook ペイロードの組み立て
       const payload = {
         username: "海のサインプロジェクト 期限リマインドBot",
         avatar_url: "https://i.imgur.com/4M34hi2.png",
         embeds: [{
           title: "🌊 【自動通知】未完了・期限間近のタスクがあります",
           description: `海のサインプロジェクトの定期実行により自動検出されたタスク一覧です。\n早めの対応・確認をお願いします！\n\n${taskListText}`,
-          color: 16738657, // 警告用のアバー/オレンジ色
+          color: 16738657,
           footer: { text: "Cloudflare Workers Cron Engine | 海のサインプロジェクト" },
           timestamp: new Date().toISOString()
         }]
       };
 
-      // Discord に Webhook を送信
       const response = await fetch(env.DISCORD_WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
