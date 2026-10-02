@@ -18,16 +18,50 @@ export default {
     }
 
     try {
-      // 1. タスク一覧の取得 [GET /api/tasks]
-      if (url.pathname === '/api/tasks' && request.method === 'GET') {
-        const { results } = await env.DB.prepare('SELECT * FROM tasks ORDER BY id DESC').all();
-        return Response.json(results, { headers: corsHeaders });
+      // 1. タスク管理 API [/api/tasks]
+      if (url.pathname === '/api/tasks') {
+        if (request.method === 'GET') {
+          const { results } = await env.DB.prepare('SELECT * FROM tasks ORDER BY id DESC').all();
+          return Response.json(results, { headers: corsHeaders });
+        }
+        if (request.method === 'POST') {
+          const body = await request.json();
+          await env.DB.prepare('INSERT INTO tasks (title, team, due, status) VALUES (?, ?, ?, ?)').bind(body.title, body.team, body.due, body.status).run();
+          return Response.json({ success: true }, { headers: corsHeaders });
+        }
+        if (request.method === 'PUT') {
+          const body = await request.json();
+          await env.DB.prepare('UPDATE tasks SET title = ?, team = ?, due = ?, status = ? WHERE id = ?').bind(body.title, body.team, body.due, body.status, body.id).run();
+          return Response.json({ success: true }, { headers: corsHeaders });
+        }
+        if (request.method === 'DELETE') {
+          const body = await request.json();
+          await env.DB.prepare('DELETE FROM tasks WHERE id = ?').bind(body.id).run();
+          return Response.json({ success: true }, { headers: corsHeaders });
+        }
       }
 
-      // 2. ホテル/交渉先一覧の取得 [GET /api/hotels]
-      if (url.pathname === '/api/hotels' && request.method === 'GET') {
-        const { results } = await env.DB.prepare('SELECT * FROM hotels ORDER BY id DESC').all();
-        return Response.json(results, { headers: corsHeaders });
+      // 2. ホテル/交渉先管理 API [/api/hotels]
+      if (url.pathname === '/api/hotels') {
+        if (request.method === 'GET') {
+          const { results } = await env.DB.prepare('SELECT * FROM hotels ORDER BY id DESC').all();
+          return Response.json(results, { headers: corsHeaders });
+        }
+        if (request.method === 'POST') {
+          const body = await request.json();
+          await env.DB.prepare('INSERT INTO hotels (name, date, status, location, material, memo) VALUES (?, ?, ?, ?, ?, ?)').bind(body.name, body.date, body.status, body.location, body.material, body.memo).run();
+          return Response.json({ success: true }, { headers: corsHeaders });
+        }
+        if (request.method === 'PUT') {
+          const body = await request.json();
+          await env.DB.prepare('UPDATE hotels SET name = ?, date = ?, status = ?, location = ?, material = ?, memo = ? WHERE id = ?').bind(body.name, body.date, body.status, body.location, body.material, body.memo, body.id).run();
+          return Response.json({ success: true }, { headers: corsHeaders });
+        }
+        if (request.method === 'DELETE') {
+          const body = await request.json();
+          await env.DB.prepare('DELETE FROM hotels WHERE id = ?').bind(body.id).run();
+          return Response.json({ success: true }, { headers: corsHeaders });
+        }
       }
 
       // 404 Not Found
@@ -50,7 +84,7 @@ export default {
 
     try {
       // D1 データベースから「未完了」かつ「期限切れ、または期限まで2日以内」のタスクを全自動抽出
-      // (JST/日本時間を基準にするため、+9 hours を指定しています)
+      // (JST/日本時間を基準にするため、+9 hours を指定)
       const { results } = await env.DB.prepare(`
         SELECT title, team, due, status 
         FROM tasks 
@@ -76,13 +110,13 @@ export default {
 
       // Discord Webhook ペイロードの組み立て
       const payload = {
-        username: "海のサイン 期限リマインドBot",
+        username: "海のサインプロジェクト 期限リマインドBot",
         avatar_url: "https://i.imgur.com/4M34hi2.png",
         embeds: [{
           title: "🌊 【自動通知】未完了・期限間近のタスクがあります",
-          description: `Cloudflare 定期実行により自動検出されたタスク一覧です。\n早めの対応・確認をお願いします！\n\n${taskListText}`,
+          description: `海のサインプロジェクトの定期実行により自動検出されたタスク一覧です。\n早めの対応・確認をお願いします！\n\n${taskListText}`,
           color: 16738657, // 警告用のアバー/オレンジ色
-          footer: { text: "Cloudflare Workers Cron Engine | うみぽす甲子園プロジェクト" },
+          footer: { text: "Cloudflare Workers Cron Engine | 海のサインプロジェクト" },
           timestamp: new Date().toISOString()
         }]
       };
