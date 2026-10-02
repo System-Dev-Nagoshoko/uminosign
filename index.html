@@ -4,12 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>海のサインプロジェクト | タスク管理Dashboard</title>
-  <!-- Tailwind CSS -->
+
+  <!-- Tailwind CSS (Play CDN Warning 対策) -->
   <script src="https://cdn.tailwindcss.com"></script>
+
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- LINE LIFF SDK -->
-  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <!-- LINE LIFF SDK (defer付きで確実に後から読み込み) -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>
+
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   
@@ -48,7 +52,6 @@
   <div id="auth-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all">
     <div class="crystal-card p-6 sm:p-8 rounded-3xl max-w-md w-full text-center space-y-6 shadow-2xl relative overflow-hidden">
       
-      <!-- 装飾背景 -->
       <div class="absolute -top-12 -right-12 w-32 h-32 bg-sky-400/10 rounded-full blur-2xl pointer-events-none"></div>
       <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -109,7 +112,6 @@
         </div>
 
         <div class="flex items-center gap-3">
-          <!-- ユーザープロファイル表示 -->
           <div id="user-badge" class="flex items-center gap-2 bg-slate-100/80 px-3 py-1.5 rounded-full border border-slate-200/60">
             <img id="user-avatar" class="w-6 h-6 rounded-full object-cover hidden" src="" alt="avatar">
             <span id="user-name" class="text-xs font-bold text-slate-700">認証中...</span>
@@ -123,7 +125,6 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6 pb-20">
-      <!-- セキュリティ規則アピール -->
       <div class="crystal-card !bg-amber-50/80 !border-amber-200 p-4 rounded-2xl shadow-sm flex items-start gap-3.5">
         <div class="p-2 bg-amber-500/10 rounded-xl text-amber-600 flex-shrink-0">
           <i data-lucide="shield-alert" class="w-5 h-5"></i>
@@ -136,7 +137,6 @@
         </div>
       </div>
 
-      <!-- 統計指標 -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="crystal-card p-4 rounded-2xl flex items-center gap-3.5">
           <div class="p-3 bg-sky-500/10 text-sky-600 rounded-xl"><i data-lucide="check-square" class="w-5 h-5"></i></div>
@@ -156,7 +156,6 @@
         </div>
       </div>
 
-      <!-- タスク＆交渉先ビュー切り替え -->
       <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
         <div class="flex gap-2">
           <button id="view-btn-tasks" onclick="switchView('tasks')" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-sm transition-all flex items-center gap-2">
@@ -171,7 +170,6 @@
         </button>
       </div>
 
-      <!-- タスクテーブル -->
       <div id="view-tasks" class="space-y-4">
         <div class="crystal-card rounded-2xl overflow-hidden shadow-sm">
           <div class="overflow-x-auto custom-scrollbar">
@@ -193,7 +191,6 @@
         </div>
       </div>
 
-      <!-- ホテルテーブル -->
       <div id="view-hotels" class="space-y-4 hidden">
         <div class="crystal-card rounded-2xl overflow-hidden shadow-sm">
           <div class="overflow-x-auto custom-scrollbar">
@@ -217,7 +214,7 @@
         </div>
       </div>
 
-      <!-- 👥 ログインユーザー履歴カード（ダッシュボード最下部に設置） -->
+      <!-- 👥 ログインユーザー履歴カード -->
       <div id="user-logs-container" class="space-y-4"></div>
     </main>
   </div>
@@ -242,20 +239,25 @@
 
   <script>
     // ⚙️ システム設定
-    const WORKER_URL = 'https://uminosign.zinn1019t.workers.dev'; // Protocol付きWorker URL
-    const LIFF_ID = '2011830749-oBGQ72bz'; // LIFF ID
+    const WORKER_URL = 'https://uminosign.zinn1019t.workers.dev';
+    const LIFF_ID = '2011830749-oBGQ72bz';
 
-    // 状態管理
     let currentAuthHeader = sessionStorage.getItem('umi_auth_token') || '';
-    let currentAuthType = sessionStorage.getItem('umi_auth_type') || ''; // 'LINE' または 'ADMIN'
+    let currentAuthType = sessionStorage.getItem('umi_auth_type') || '';
     let currentView = 'tasks';
     let tasks = [];
     let hotels = [];
     let userLogs = [];
     let editingItemId = null;
 
-    // --- ① 認証処理 & LINE LIFF 初期化 ---
+    // --- ① 認証処理 & LINE LIFF 安全初期化 ---
     async function initLiff() {
+      // liffオブジェクトが存在しない（ネットワークエラー等）場合は安全にスキップ
+      if (typeof liff === 'undefined') {
+        console.warn("LINE LIFF SDK が読み込めない環境のため、管理者ログインをご利用ください。");
+        return;
+      }
+
       if (LIFF_ID && LIFF_ID !== 'YOUR_LIFF_ID_HERE') {
         try {
           await liff.init({ liffId: LIFF_ID });
@@ -264,14 +266,12 @@
             const profile = await liff.getProfile();
             const token = `LINE_TOKEN:${idToken}`;
             
-            // ログインログの自動保存（LINE）
             await recordLogin(profile.displayName, 'LINE', profile.pictureUrl, token);
-
             setSessionAuth(token, 'LINE', profile.displayName, profile.pictureUrl);
             await fetchDashboardData();
           }
         } catch (err) {
-          console.warn("LIFF 初期化スキップまたはエラー:", err);
+          console.warn("LIFF 初期化エラー:", err);
         }
       }
     }
@@ -296,6 +296,10 @@
     }
 
     function loginWithLine() {
+      if (typeof liff === 'undefined') {
+        showAuthError("LINE SDKがブロックされています。管理者ID/Passタブからログインしてください。");
+        return;
+      }
       if (!liff.isLoggedIn()) {
         liff.login();
       }
@@ -317,9 +321,7 @@
         await fetchDashboardData();
         const userName = `管理者 (${id})`;
 
-        // ログインログの自動保存（ADMIN）
         await recordLogin(userName, 'ADMIN', '', adminAuthToken);
-
         setSessionAuth(adminAuthToken, 'ADMIN', userName, null);
       } catch (err) {
         showAuthError("管理者IDまたはパスワードが正しくありません");
@@ -433,7 +435,7 @@
       renderTasksTable();
       renderHotelsTable();
       renderUserLogsTable();
-      lucide.createIcons();
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function updateStats() {
@@ -572,7 +574,7 @@
       document.getElementById('modal-title').innerText = currentView === 'tasks' ? '新規タスク追加' : '新規交渉先追加';
       renderFormFields({});
       document.getElementById('item-modal').classList.remove('hidden');
-      lucide.createIcons();
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function openEditModal(type, id) {
@@ -581,7 +583,7 @@
       document.getElementById('modal-title').innerText = type === 'tasks' ? 'タスク編集' : '交渉先編集';
       renderFormFields(item);
       document.getElementById('item-modal').classList.remove('hidden');
-      lucide.createIcons();
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function closeAddModal() {
@@ -668,9 +670,8 @@
 
     // --- DOMロード後の初期化 ---
     document.addEventListener('DOMContentLoaded', async () => {
-      lucide.createIcons();
+      if (typeof lucide !== 'undefined') lucide.createIcons();
 
-      // セッションの再認証チェック
       if (currentAuthHeader) {
         try {
           await fetchDashboardData();
@@ -685,8 +686,10 @@
         }
       }
 
-      // LINE LIFF の試行
-      initLiff();
+      // 安全にLIFF初期化を実行
+      setTimeout(() => {
+        initLiff();
+      }, 300);
     });
   </script>
 </body>
