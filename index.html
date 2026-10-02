@@ -3,301 +3,398 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>海のサインプロジェクト | ホワイトクリスタル・ダッシュボード</title>
+  <title>海のサインプロジェクト |タスク管理Dashboard</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- LINE LIFF SDK -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   
   <style>
     body { font-family: 'Plus Jakarta Sans', 'Noto Sans JP', sans-serif; }
-
-    /* --- ホワイト・グラデーション背景 --- */
     .crystal-bg {
       background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 35%, #e2e8f0 70%, #f8fafc 100%);
       background-size: 200% 200%;
       animation: crystalGradient 16s ease infinite;
     }
-
     @keyframes crystalGradient {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-
-    /* --- 浮遊するクリスタル＆図形アニメーション --- */
-    .shape {
-      position: absolute;
-      pointer-events: none;
-      opacity: 0.45;
-      animation: floatShape 14s ease-in-out infinite alternate;
-    }
-
-    .crystal-1 {
-      width: 90px; height: 90px;
-      background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(129, 140, 248, 0.1));
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      transform: rotate(45deg);
-      top: 10%; left: 8%;
-      box-shadow: 0 8px 32px 0 rgba(14, 165, 233, 0.15);
-      animation-duration: 12s;
-    }
-
-    .crystal-2 {
-      width: 140px; height: 140px;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(56, 189, 248, 0.15));
-      border: 1.5px solid rgba(186, 230, 253, 0.6);
-      transform: rotate(25deg);
-      top: 55%; right: 5%;
-      backdrop-filter: blur(4px);
-      animation-duration: 18s;
-    }
-
-    .crystal-3 {
-      width: 180px; height: 180px;
-      border: 2px solid transparent;
-      border-image: linear-gradient(135deg, rgba(56, 189, 248, 0.5), rgba(168, 85, 247, 0.2)) 1;
-      border-radius: 50%;
-      top: 35%; left: 20%;
-      animation-duration: 22s;
-    }
-
-    .crystal-4 {
-      width: 50px; height: 50px;
-      background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(56, 189, 248, 0.2));
-      transform: rotate(45deg);
-      bottom: 12%; left: 15%;
-      animation-duration: 10s;
-    }
-
-    @keyframes floatShape {
-      0% { transform: translateY(0px) rotate(0deg) scale(1); }
-      50% { transform: translateY(-35px) rotate(180deg) scale(1.08); }
-      100% { transform: translateY(20px) rotate(360deg) scale(0.95); }
-    }
-
-    /* クリスタルグラスカード */
     .crystal-card {
-      background: rgba(255, 255, 255, 0.75);
+      background: rgba(255, 255, 255, 0.8);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.9);
       box-shadow: 0 10px 30px -5px rgba(148, 163, 184, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
     }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(203, 213, 225, 0.8);
+      border-radius: 9999px;
+    }
   </style>
 </head>
-<body class="crystal-bg text-slate-800 antialiased min-h-screen pb-16 relative overflow-x-hidden">
+<body class="crystal-bg text-slate-800 antialiased min-h-screen relative overflow-x-hidden">
 
-  <!-- 💎 浮遊するクリスタル図形レイヤー -->
-  <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-    <div class="shape crystal-1"></div>
-    <div class="shape crystal-2"></div>
-    <div class="shape crystal-3"></div>
-    <div class="shape crystal-4"></div>
+  <!-- 🔒 認証オーバーレイ（LINE連携 / 管理者ログイン） -->
+  <div id="auth-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all">
+    <div class="crystal-card p-6 sm:p-8 rounded-3xl max-w-md w-full text-center space-y-6 shadow-2xl relative overflow-hidden">
+      
+      <!-- 装飾背景 -->
+      <div class="absolute -top-12 -right-12 w-32 h-32 bg-sky-400/10 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none"></div>
+
+      <div class="inline-flex p-3 bg-gradient-to-br from-sky-400 to-indigo-500 text-white rounded-2xl shadow-lg shadow-sky-500/20">
+        <i data-lucide="waves" class="w-8 h-8"></i>
+      </div>
+      <div>
+        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">海のサインプロジェクト</h2>
+        <p class="text-xs text-slate-500 mt-1">ダッシュボードへのアクセスには認証が必要です</p>
+      </div>
+
+      <!-- モード切り替えタブ -->
+      <div class="flex p-1 bg-slate-100/80 rounded-xl text-xs font-bold border border-slate-200/60">
+        <button id="tab-btn-line" onclick="switchAuthTab('line')" class="flex-1 py-2 rounded-lg bg-white shadow-sm text-slate-800 transition-all">LINE連携ログイン</button>
+        <button id="tab-btn-admin" onclick="switchAuthTab('admin')" class="flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition-all">管理者ID/Pass</button>
+      </div>
+
+      <!-- LINEログインパネル -->
+      <div id="panel-line" class="space-y-4">
+        <p class="text-xs text-slate-600 leading-relaxed">LINEアカウントで本人確認を行い、安全にプロジェクトへログインします。</p>
+        <button onclick="loginWithLine()" class="w-full bg-[#06C755] hover:bg-[#05b34c] text-white font-bold py-3 px-4 rounded-xl text-sm shadow-md transition-all active:scale-95 flex items-center justify-center gap-2">
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 5.82 2 10.53c0 4.23 3.6 7.78 8.46 8.41.33.07.78.22.89.5.1.26.07.67.03.93-.05.35-.23 1.39-.26 1.69-.05.47.22.92.71.5.49-.42 5.25-3.1 7.18-5.3C20.8 15.02 22 12.92 22 10.53 22 5.82 17.52 2 12 2z"/></svg>
+          LINEでログイン
+        </button>
+      </div>
+
+      <!-- 管理者ID/Passログインパネル -->
+      <div id="panel-admin" class="space-y-3 hidden">
+        <div class="text-left space-y-1">
+          <label class="text-[11px] font-bold text-slate-500">管理者ID</label>
+          <input type="text" id="admin-id-input" placeholder="admin" class="w-full px-3.5 py-2.5 bg-white/90 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-sky-400 focus:outline-none transition-all">
+        </div>
+        <div class="text-left space-y-1">
+          <label class="text-[11px] font-bold text-slate-500">パスワード</label>
+          <input type="password" id="admin-pass-input" onkeypress="if(event.key==='Enter') loginWithAdmin()" placeholder="••••••••" class="w-full px-3.5 py-2.5 bg-white/90 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-sky-400 focus:outline-none transition-all">
+        </div>
+        <button onclick="loginWithAdmin()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-sm shadow-md transition-all active:scale-95">
+          管理者としてログイン
+        </button>
+      </div>
+
+      <p id="auth-error-msg" class="text-xs font-bold text-rose-500 hidden"></p>
+    </div>
   </div>
 
-  <!-- メインコンテンツ -->
-  <div class="relative z-10">
-
-    <!-- ヘッダー -->
-    <header class="bg-white/80 backdrop-blur-md text-slate-800 shadow-sm border-b border-white sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+  <!-- 💎 ダッシュボード本体 -->
+  <div id="app-root" class="hidden relative z-10">
+    <header class="bg-white/80 backdrop-blur-md text-slate-800 shadow-sm border-b border-white sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 py-3.5 sm:px-6 lg:px-8 flex justify-between items-center">
         <div class="flex items-center gap-3">
-          <div class="p-2.5 bg-gradient-to-br from-sky-400 to-indigo-500 rounded-2xl text-white shadow-md shadow-sky-500/20">
+          <div class="p-2.5 bg-gradient-to-br from-sky-400 to-indigo-500 rounded-2xl text-white shadow-md">
             <i data-lucide="gem" class="w-6 h-6"></i>
           </div>
           <div>
-            <div class="flex items-center gap-2">
-              <h1 class="text-lg sm:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-sky-900 to-indigo-900 bg-clip-text text-transparent">海のサインプロジェクト</h1>
-              <span class="px-2.5 py-0.5 text-[10px] font-extrabold bg-sky-100 text-sky-700 border border-sky-200 rounded-full shadow-2xl">CRYSTAL D1</span>
-            </div>
-            <p class="text-xs text-slate-500 font-medium">うみぽす甲子園 | 海のサインプロジェクト 進捗基盤</p>
+            <h1 class="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-sky-900 to-indigo-900 bg-clip-text text-transparent">海のサインプロジェクト</h1>
+            <p class="text-xs text-slate-500 font-medium">白浜ユニバーサルデザイン安全看板進捗</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-sm">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-            D1 Synced
-          </span>
+
+        <div class="flex items-center gap-3">
+          <!-- ユーザープロファイル表示 -->
+          <div id="user-badge" class="flex items-center gap-2 bg-slate-100/80 px-3 py-1.5 rounded-full border border-slate-200/60">
+            <img id="user-avatar" class="w-6 h-6 rounded-full object-cover hidden" src="" alt="avatar">
+            <span id="user-name" class="text-xs font-bold text-slate-700">認証中...</span>
+            <span id="user-role-tag" class="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-sky-100 text-sky-700">LINE</span>
+          </div>
+          <button onclick="logout()" class="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all" title="ログアウト">
+            <i data-lucide="log-out" class="w-5 h-5"></i>
+          </button>
         </div>
       </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
-
-      <!-- セキュリティ警告 -->
-      <div class="crystal-card !bg-amber-50/70 !border-amber-200/80 p-4 rounded-2xl shadow-sm flex items-start gap-3.5">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6 pb-20">
+      <!-- セキュリティ規則アピール -->
+      <div class="crystal-card !bg-amber-50/80 !border-amber-200 p-4 rounded-2xl shadow-sm flex items-start gap-3.5">
         <div class="p-2 bg-amber-500/10 rounded-xl text-amber-600 flex-shrink-0">
           <i data-lucide="shield-alert" class="w-5 h-5"></i>
         </div>
         <div class="space-y-0.5">
-          <h3 class="text-xs sm:text-sm font-bold text-amber-900">【絶対遵守】学校代表電話への連絡依頼厳禁ルール</h3>
+          <h3 class="text-xs sm:text-sm font-bold text-amber-900">【重要ルール】学校代表電話への連絡・問合せ厳禁</h3>
           <p class="text-xs text-amber-800/80 leading-relaxed">
-            本企画は校内有志プロジェクトです。先方からの問い合わせ先は「専用メール」のみを案内し、学校代表電話へ連絡が行かないよう徹底してください。
+            本企画は有志プロジェクトです。自治体・ホテル交渉時は必ず指定の専用メールアドレスを案内し、学校宛の直接電話を防いでください。
           </p>
         </div>
       </div>
 
-      <!-- 統計サマリーカード -->
+      <!-- 統計指標 -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div class="crystal-card p-4 rounded-2xl hover:translate-y-[-2px] transition-all flex items-center gap-3.5">
-          <div class="p-3 bg-sky-500/10 text-sky-600 rounded-xl border border-sky-100">
-            <i data-lucide="check-square" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <p class="text-xs font-bold text-slate-400">全体タスク</p>
-            <p id="stat-tasks-count" class="text-xl font-extrabold text-slate-800">0</p>
-          </div>
+        <div class="crystal-card p-4 rounded-2xl flex items-center gap-3.5">
+          <div class="p-3 bg-sky-500/10 text-sky-600 rounded-xl"><i data-lucide="check-square" class="w-5 h-5"></i></div>
+          <div><p class="text-xs font-bold text-slate-400">全体タスク</p><p id="stat-tasks-count" class="text-xl font-extrabold text-slate-800">0</p></div>
         </div>
-
-        <div class="crystal-card p-4 rounded-2xl hover:translate-y-[-2px] transition-all flex items-center gap-3.5">
-          <div class="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl border border-emerald-100">
-            <i data-lucide="check-circle-2" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <p class="text-xs font-bold text-slate-400">完了タスク</p>
-            <p id="stat-tasks-done" class="text-xl font-extrabold text-slate-800">0</p>
-          </div>
+        <div class="crystal-card p-4 rounded-2xl flex items-center gap-3.5">
+          <div class="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl"><i data-lucide="check-circle-2" class="w-5 h-5"></i></div>
+          <div><p class="text-xs font-bold text-slate-400">完了タスク</p><p id="stat-tasks-done" class="text-xl font-extrabold text-slate-800">0</p></div>
         </div>
-
-        <div class="crystal-card p-4 rounded-2xl hover:translate-y-[-2px] transition-all flex items-center gap-3.5">
-          <div class="p-3 bg-indigo-500/10 text-indigo-600 rounded-xl border border-indigo-100">
-            <i data-lucide="building-2" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <p class="text-xs font-bold text-slate-400">対象企業・団体</p>
-            <p id="stat-hotels-count" class="text-xl font-extrabold text-slate-800">0</p>
-          </div>
+        <div class="crystal-card p-4 rounded-2xl flex items-center gap-3.5">
+          <div class="p-3 bg-indigo-500/10 text-indigo-600 rounded-xl"><i data-lucide="building-2" class="w-5 h-5"></i></div>
+          <div><p class="text-xs font-bold text-slate-400">交渉先施設</p><p id="stat-hotels-count" class="text-xl font-extrabold text-slate-800">0</p></div>
         </div>
-
-        <div class="crystal-card p-4 rounded-2xl hover:translate-y-[-2px] transition-all flex items-center gap-3.5">
-          <div class="p-3 bg-amber-500/10 text-amber-600 rounded-xl border border-amber-100">
-            <i data-lucide="send" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <p class="text-xs font-bold text-slate-400">打診進捗</p>
-            <p id="stat-hotels-sent" class="text-xl font-extrabold text-slate-800">0 / 0</p>
-          </div>
+        <div class="crystal-card p-4 rounded-2xl flex items-center gap-3.5">
+          <div class="p-3 bg-purple-500/10 text-purple-600 rounded-xl"><i data-lucide="send" class="w-5 h-5"></i></div>
+          <div><p class="text-xs font-bold text-slate-400">打診進捗</p><p id="stat-hotels-sent" class="text-xl font-extrabold text-slate-800">0 / 0</p></div>
         </div>
       </div>
 
-      <!-- タブ切り替え -->
-      <div class="flex p-1.5 bg-slate-200/50 backdrop-blur-md rounded-2xl w-fit gap-1 border border-white">
-        <button id="btn-tab-tasks" onclick="switchTab('tasks')" class="flex items-center gap-2 py-2.5 px-5 text-xs sm:text-sm font-bold rounded-xl bg-white text-sky-900 shadow-md transition-all">
-          <i data-lucide="list-todo" class="w-4 h-4 text-sky-600"></i> タスク管理
-        </button>
-        <button id="btn-tab-hotels" onclick="switchTab('hotels')" class="flex items-center gap-2 py-2.5 px-5 text-xs sm:text-sm font-bold rounded-xl text-slate-600 hover:text-slate-900 transition-all">
-          <i data-lucide="building-2" class="w-4 h-4 text-indigo-600"></i> 交渉中の企業・団体
+      <!-- タスク＆交渉先ビュー切り替え -->
+      <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
+        <div class="flex gap-2">
+          <button id="view-btn-tasks" onclick="switchView('tasks')" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-sm transition-all flex items-center gap-2">
+            <i data-lucide="list-todo" class="w-4 h-4"></i> タスク管理
+          </button>
+          <button id="view-btn-hotels" onclick="switchView('hotels')" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-white/80 transition-all flex items-center gap-2">
+            <i data-lucide="hotel" class="w-4 h-4"></i> ホテル/設置交渉先
+          </button>
+        </div>
+        <button id="add-modal-trigger" onclick="openAddModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md hover:opacity-90 transition-all flex items-center gap-1.5">
+          <i data-lucide="plus" class="w-4 h-4"></i> 新規追加
         </button>
       </div>
 
-      <!-- TAB 1: メインタスク管理 -->
-      <div id="tab-tasks" class="space-y-5">
-        <div class="crystal-card p-5 rounded-2xl space-y-4">
-          <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-            <i data-lucide="plus-circle" class="w-4 h-4 text-sky-600"></i> 新規タスクの登録
-          </h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            <input type="text" id="task-title" onkeypress="if(event.key==='Enter') addTask()" placeholder="タスク内容" class="col-span-1 sm:col-span-2 px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-sky-400 focus:bg-white focus:outline-none transition-all">
-            <input type="text" id="task-team" onkeypress="if(event.key==='Enter') addTask()" placeholder="担当チーム / 名前" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-sky-400 focus:bg-white focus:outline-none transition-all">
-            <input type="date" id="task-due" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-sky-400 focus:bg-white focus:outline-none transition-all">
-            <button onclick="addTask()" class="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 active:scale-95">
-              <i data-lucide="plus" class="w-4 h-4"></i> 追加
-            </button>
-          </div>
-        </div>
-
-        <div class="crystal-card rounded-2xl overflow-hidden">
-          <div class="px-5 py-4 border-b border-slate-100 bg-white/50 flex justify-between items-center">
-            <h3 class="text-xs sm:text-sm font-bold text-slate-700">タスク一覧（セル直接編集可能）</h3>
-            <button onclick="resetTasks()" class="text-xs text-rose-500 hover:text-rose-700 font-medium">初期化</button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+      <!-- タスクテーブル -->
+      <div id="view-tasks" class="space-y-4">
+        <div class="crystal-card rounded-2xl overflow-hidden shadow-sm">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-xs border-collapse">
               <thead>
-                <tr class="bg-slate-50/80 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-100">
-                  <th class="py-3 px-4 min-w-[200px]">タスク名</th>
-                  <th class="py-3 px-4 min-w-[120px]">担当</th>
-                  <th class="py-3 px-4 min-w-[130px]">期限</th>
-                  <th class="py-3 px-4 min-w-[130px]">状態</th>
-                  <th class="py-3 px-4 text-right">操作</th>
+                <tr class="bg-slate-100/60 border-b border-slate-200/60 text-slate-500 font-bold uppercase tracking-wider">
+                  <th class="p-3.5">タスク名</th>
+                  <th class="p-3.5">担当チーム</th>
+                  <th class="p-3.5">期限</th>
+                  <th class="p-3.5">ステータス</th>
+                  <th class="p-3.5 text-right">操作</th>
                 </tr>
               </thead>
-              <tbody id="task-list-body" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
+              <tbody id="task-table-body" class="divide-y divide-slate-100 font-medium text-slate-700">
+                <tr><td colspan="5" class="p-8 text-center text-slate-400">データ読込中...</td></tr>
+              </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <!-- TAB 2: 交渉中の企業・団体 -->
-      <div id="tab-hotels" class="hidden space-y-5">
-        <div class="crystal-card p-5 rounded-2xl space-y-4">
-          <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-            <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> 対象企業・団体の追加
-          </h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            <input type="text" id="hotel-name" onkeypress="if(event.key==='Enter') addHotel()" placeholder="企業・団体名" class="col-span-1 sm:col-span-2 px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:bg-white focus:outline-none transition-all">
-            <input type="text" id="hotel-date" onkeypress="if(event.key==='Enter') addHotel()" placeholder="打診日 (例: 10/06)" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:bg-white focus:outline-none transition-all">
-            <input type="text" id="hotel-loc" onkeypress="if(event.key==='Enter') addHotel()" placeholder="設置予定場所" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:bg-white focus:outline-none transition-all">
-            <button onclick="addHotel()" class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 active:scale-95">
-              <i data-lucide="plus" class="w-4 h-4"></i> 追加
-            </button>
-          </div>
-        </div>
-
-        <div class="crystal-card rounded-2xl overflow-hidden">
-          <div class="px-5 py-4 border-b border-slate-100 bg-white/50 flex justify-between items-center">
-            <h3 class="text-xs sm:text-sm font-bold text-slate-700">交渉中の企業・団体一覧（全項目・複数行全表示対応）</h3>
-            <button onclick="resetHotels()" class="text-xs text-rose-500 hover:text-rose-700 font-medium">初期化</button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+      <!-- ホテルテーブル -->
+      <div id="view-hotels" class="space-y-4 hidden">
+        <div class="crystal-card rounded-2xl overflow-hidden shadow-sm">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-xs border-collapse">
               <thead>
-                <tr class="bg-slate-50/80 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-100">
-                  <th class="py-3 px-4 min-w-[200px]">企業・団体名</th>
-                  <th class="py-3 px-4 min-w-[90px]">打診日</th>
-                  <th class="py-3 px-4 min-w-[140px]">交渉ステータス</th>
-                  <th class="py-3 px-4 min-w-[140px]">設置場所</th>
-                  <th class="py-3 px-4 min-w-[80px]">素材回収</th>
-                  <th class="py-3 px-4 min-w-[240px]">次回アクション / メモ</th>
-                  <th class="py-3 px-4 text-right">操作</th>
+                <tr class="bg-slate-100/60 border-b border-slate-200/60 text-slate-500 font-bold uppercase tracking-wider">
+                  <th class="p-3.5">施設・交渉先名</th>
+                  <th class="p-3.5">連絡日</th>
+                  <th class="p-3.5">ステータス</th>
+                  <th class="p-3.5">設置場所</th>
+                  <th class="p-3.5">資材</th>
+                  <th class="p-3.5">メモ</th>
+                  <th class="p-3.5 text-right">操作</th>
                 </tr>
               </thead>
-              <tbody id="hotel-list-body" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
+              <tbody id="hotel-table-body" class="divide-y divide-slate-100 font-medium text-slate-700">
+                <tr><td colspan="7" class="p-8 text-center text-slate-400">データ読込中...</td></tr>
+              </tbody>
             </table>
           </div>
         </div>
       </div>
-
     </main>
   </div>
 
+  <!-- 新規追加/編集モーダル -->
+  <div id="item-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm hidden">
+    <div class="crystal-card p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-200/60 pb-3">
+        <h3 id="modal-title" class="text-sm font-extrabold text-slate-800">新規登録</h3>
+        <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <form id="modal-form" onsubmit="handleFormSubmit(event)" class="space-y-3 text-xs">
+        <div id="form-fields" class="space-y-3"></div>
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-200/60">
+          <button type="button" onclick="closeAddModal()" class="px-4 py-2 rounded-xl font-bold bg-slate-100 text-slate-600">キャンセル</button>
+          <button type="submit" class="px-4 py-2 rounded-xl font-bold bg-sky-500 text-white shadow-md hover:bg-sky-600">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
-    const defaultTasks = [
-      { id: 1, title: '海のサインプロジェクト 打診用A4資料・メール本文の完成', team: '交渉チーム', due: '2026-10-03', status: '完了' },
-      { id: 2, title: '海のサイン 卓上アクリルサイン試作（角R加工＋UV印刷）', team: 'デザインチーム', due: '2026-10-03', status: '進行中' },
-      { id: 3, title: '海のサインプロジェクト 特設Webサイト骨組作成', team: 'Webチーム', due: '2026-10-04', status: '進行中' },
-      { id: 4, title: '二次元コード飛び先Googleフォーム作成', team: 'Webチーム', due: '2026-10-05', status: '未着手' },
-      { id: 5, title: '海のサインプロジェクト チーム内送信前最終確認', team: '全チーム', due: '2026-10-05', status: '未着手' },
-      { id: 6, title: 'ターゲット4施設へのメール一斉送信', team: '交渉チーム', due: '2026-10-06', status: '未着手' }
-    ];
+    // ⚙️ システム設定
+    const WORKER_URL = 'https://umi-sign-api.YOUR-SUBDOMAIN.workers.dev'; // Worker URL
+    const LIFF_ID = 'YOUR_LIFF_ID_HERE'; // LIFF ID
 
-    const defaultHotels = [
-      { id: 1, name: 'オリエンタルホテル 沖縄リゾート＆スパ', date: '10/06(火)', status: '送信準備中', location: 'フロント/マリン受付', material: '未', memo: '海のサインプロジェクト専用連絡先を明記して送信' },
-      { id: 2, name: 'TWINLINE HOTEL YANBARU OKINAWA JAPAN', date: '10/06(火)', status: '送信準備中', location: 'ロビーカウンター', material: '未', memo: '海のサインプロジェクト専用連絡先を明記して送信' },
-      { id: 3, name: 'ホテルゆがふいんおきなわ', date: '10/06(火)', status: '送信準備中', location: '1階フロント卓上', material: '未', memo: '海のサインプロジェクト専用連絡先を明記して送信' },
-      { id: 4, name: 'オクマ プライベートビーチ ＆ リゾート', date: '10/06(火)', status: '送信準備中', location: 'ビーチ受付カウンター', material: '未', memo: '海のサインプロジェクト専用連絡先を明記して送信' }
-    ];
+    // 状態管理
+    let currentAuthHeader = sessionStorage.getItem('umi_auth_token') || '';
+    let currentAuthType = sessionStorage.getItem('umi_auth_type') || ''; // 'LINE' または 'ADMIN'
+    let currentView = 'tasks';
+    let tasks = [];
+    let hotels = [];
+    let editingItemId = null;
 
-    let tasks = JSON.parse(localStorage.getItem('umi_tasks_v14')) || defaultTasks;
-    let hotels = JSON.parse(localStorage.getItem('umi_hotels_v14')) || defaultHotels;
+    // --- ① 認証処理 & LINE LIFF 初期化 ---
+    async function initLiff() {
+      if (LIFF_ID && LIFF_ID !== 'YOUR_LIFF_ID_HERE') {
+        try {
+          await liff.init({ liffId: LIFF_ID });
+          if (liff.isLoggedIn()) {
+            const idToken = liff.getIDToken();
+            const profile = await liff.getProfile();
+            setSessionAuth(`LINE_TOKEN:${idToken}`, 'LINE', profile.displayName, profile.pictureUrl);
+            await fetchDashboardData();
+          }
+        } catch (err) {
+          console.warn("LIFF 初期化スキップまたはエラー:", err);
+        }
+      }
+    }
 
-    function saveData() {
-      localStorage.setItem('umi_tasks_v14', JSON.stringify(tasks));
-      localStorage.setItem('umi_hotels_v14', JSON.stringify(hotels));
+    function switchAuthTab(type) {
+      const lineTab = document.getElementById('tab-btn-line');
+      const adminTab = document.getElementById('tab-btn-admin');
+      const linePanel = document.getElementById('panel-line');
+      const adminPanel = document.getElementById('panel-admin');
+
+      if (type === 'line') {
+        lineTab.className = "flex-1 py-2 rounded-lg bg-white shadow-sm text-slate-800 transition-all";
+        adminTab.className = "flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition-all";
+        linePanel.classList.remove('hidden');
+        adminPanel.classList.add('hidden');
+      } else {
+        adminTab.className = "flex-1 py-2 rounded-lg bg-white shadow-sm text-slate-800 transition-all";
+        lineTab.className = "flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition-all";
+        adminPanel.classList.remove('hidden');
+        linePanel.classList.add('hidden');
+      }
+    }
+
+    function loginWithLine() {
+      if (!liff.isLoggedIn()) {
+        liff.login();
+      }
+    }
+
+    async function loginWithAdmin() {
+      const id = document.getElementById('admin-id-input').value.trim();
+      const pass = document.getElementById('admin-pass-input').value.trim();
+      const errEl = document.getElementById('auth-error-msg');
+
+      if (!id || !pass) {
+        showAuthError("IDとパスワードを入力してください");
+        return;
+      }
+
+      const adminAuthToken = `ADMIN:${id}:${pass}`;
+      currentAuthHeader = adminAuthToken;
+
+      try {
+        await fetchDashboardData();
+        setSessionAuth(adminAuthToken, 'ADMIN', `管理者 (${id})`, null);
+      } catch (err) {
+        showAuthError("管理者IDまたはパスワードが正しくありません");
+      }
+    }
+
+    function setSessionAuth(token, type, name, avatar) {
+      currentAuthHeader = token;
+      currentAuthType = type;
+      sessionStorage.setItem('umi_auth_token', token);
+      sessionStorage.setItem('umi_auth_type', type);
+
+      document.getElementById('auth-overlay').classList.add('hidden');
+      document.getElementById('app-root').classList.remove('hidden');
+      
+      document.getElementById('user-name').innerText = name;
+      document.getElementById('user-role-tag').innerText = type;
+
+      const avatarEl = document.getElementById('user-avatar');
+      if (avatar) {
+        avatarEl.src = avatar;
+        avatarEl.classList.remove('hidden');
+      } else {
+        avatarEl.classList.add('hidden');
+      }
+    }
+
+    function showAuthError(msg) {
+      const errEl = document.getElementById('auth-error-msg');
+      errEl.innerText = msg;
+      errEl.classList.remove('hidden');
+    }
+
+    function logout() {
+      sessionStorage.clear();
+      if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+        liff.logout();
+      }
+      location.reload();
+    }
+
+    // --- ② API通信 & データ取得 ---
+    async function apiFetch(endpoint, method = 'GET', body = null) {
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Custom-Auth': currentAuthHeader
+      };
+      const opts = { method, headers };
+      if (body) opts.body = JSON.stringify(body);
+
+      const res = await fetch(`${WORKER_URL}${endpoint}`, opts);
+      if (res.status === 401) throw new Error('UNAUTHORIZED');
+      if (!res.ok) throw new Error('API_ERROR');
+      return await res.json();
+    }
+
+    async function fetchDashboardData() {
+      tasks = await apiFetch('/api/tasks');
+      hotels = await apiFetch('/api/hotels');
+      render();
+    }
+
+    // --- ③ ビューレンダリング ---
+    function switchView(view) {
+      currentView = view;
+      const tasksBtn = document.getElementById('view-btn-tasks');
+      const hotelsBtn = document.getElementById('view-btn-hotels');
+      const tasksSec = document.getElementById('view-tasks');
+      const hotelsSec = document.getElementById('view-hotels');
+
+      if (view === 'tasks') {
+        tasksBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-sm transition-all flex items-center gap-2";
+        hotelsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-white/80 transition-all flex items-center gap-2";
+        tasksSec.classList.remove('hidden');
+        hotelsSec.classList.add('hidden');
+      } else {
+        hotelsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-sm transition-all flex items-center gap-2";
+        tasksBtn.className = "px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-white/80 transition-all flex items-center gap-2";
+        hotelsSec.classList.remove('hidden');
+        tasksSec.classList.add('hidden');
+      }
+    }
+
+    function render() {
       updateStats();
+      renderTasksTable();
+      renderHotelsTable();
+      lucide.createIcons();
     }
 
     function updateStats() {
@@ -308,137 +405,182 @@
       document.getElementById('stat-hotels-sent').innerText = `${sentCount} / ${hotels.length}`;
     }
 
-    function switchTab(tab) {
-      const tasksTab = document.getElementById('tab-tasks');
-      const hotelsTab = document.getElementById('tab-hotels');
-      const btnTasks = document.getElementById('btn-tab-tasks');
-      const btnHotels = document.getElementById('btn-tab-hotels');
+    function renderTasksTable() {
+      const tbody = document.getElementById('task-table-body');
+      if (tasks.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">タスクが登録されていません</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = tasks.map(t => `
+        <tr class="hover:bg-white/50 transition-all">
+          <td class="p-3.5 font-bold text-slate-800">${t.title}</td>
+          <td class="p-3.5"><span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 font-bold text-[11px]">${t.team}</span></td>
+          <td class="p-3.5 font-semibold ${t.due !== '未定' && new Date(t.due) < new Date() ? 'text-rose-500 font-bold' : ''}">${t.due}</td>
+          <td class="p-3.5">${getStatusBadge(t.status)}</td>
+          <td class="p-3.5 text-right space-x-1">
+            <button onclick="openEditModal('tasks', ${t.id})" class="p-1.5 text-slate-400 hover:text-sky-600 rounded-lg hover:bg-sky-50"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+            <button onclick="deleteItem('tasks', ${t.id})" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
 
-      if (tab === 'tasks') {
-        tasksTab.classList.remove('hidden');
-        hotelsTab.classList.add('hidden');
-        btnTasks.className = "flex items-center gap-2 py-2.5 px-5 text-xs sm:text-sm font-bold rounded-xl bg-white text-sky-900 shadow-md transition-all";
-        btnHotels.className = "flex items-center gap-2 py-2.5 px-5 text-xs sm:text-sm font-bold rounded-xl text-slate-600 hover:text-slate-900 transition-all";
+    function renderHotelsTable() {
+      const tbody = document.getElementById('hotel-table-body');
+      if (hotels.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">交渉施設が登録されていません</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = hotels.map(h => `
+        <tr class="hover:bg-white/50 transition-all">
+          <td class="p-3.5 font-bold text-slate-800">${h.name}</td>
+          <td class="p-3.5">${h.date || '-'}</td>
+          <td class="p-3.5">${getStatusBadge(h.status)}</td>
+          <td class="p-3.5">${h.location || '-'}</td>
+          <td class="p-3.5">${h.material || '-'}</td>
+          <td class="p-3.5 text-slate-500 max-w-xs truncate">${h.memo || '-'}</td>
+          <td class="p-3.5 text-right space-x-1">
+            <button onclick="openEditModal('hotels', ${h.id})" class="p-1.5 text-slate-400 hover:text-sky-600 rounded-lg hover:bg-sky-50"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+            <button onclick="deleteItem('hotels', ${h.id})" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function getStatusBadge(status) {
+      const styles = {
+        '完了': 'bg-emerald-100 text-emerald-700',
+        '進行中': 'bg-sky-100 text-sky-700',
+        '未着手': 'bg-slate-100 text-slate-600',
+        '許諾済': 'bg-emerald-100 text-emerald-700',
+        '打診中': 'bg-amber-100 text-amber-700',
+        '送信準備中': 'bg-slate-100 text-slate-600'
+      };
+      const cls = styles[status] || 'bg-slate-100 text-slate-600';
+      return `<span class="px-2.5 py-1 rounded-md text-[11px] font-extrabold ${cls}">${status}</span>`;
+    }
+
+    // --- ④ モーダル & CRUD 操作 ---
+    function openAddModal() {
+      editingItemId = null;
+      document.getElementById('modal-title').innerText = currentView === 'tasks' ? '新規タスク追加' : '新規交渉先追加';
+      renderFormFields({});
+      document.getElementById('item-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function openEditModal(type, id) {
+      editingItemId = id;
+      const item = type === 'tasks' ? tasks.find(t => t.id === id) : hotels.find(h => h.id === id);
+      document.getElementById('modal-title').innerText = type === 'tasks' ? 'タスク編集' : '交渉先編集';
+      renderFormFields(item);
+      document.getElementById('item-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeAddModal() {
+      document.getElementById('item-modal').classList.add('hidden');
+    }
+
+    function renderFormFields(data) {
+      const container = document.getElementById('form-fields');
+      if (currentView === 'tasks') {
+        container.innerHTML = `
+          <div><label class="font-bold text-slate-600">タスク名</label><input type="text" id="field-title" value="${data.title || ''}" required class="w-full mt-1 p-2 border rounded-lg"></div>
+          <div><label class="font-bold text-slate-600">担当チーム</label><input type="text" id="field-team" value="${data.team || 'デザイン班'}" required class="w-full mt-1 p-2 border rounded-lg"></div>
+          <div><label class="font-bold text-slate-600">期限</label><input type="date" id="field-due" value="${data.due || ''}" class="w-full mt-1 p-2 border rounded-lg"></div>
+          <div><label class="font-bold text-slate-600">ステータス</label>
+            <select id="field-status" class="w-full mt-1 p-2 border rounded-lg">
+              <option ${data.status === '未着手' ? 'selected' : ''}>未着手</option>
+              <option ${data.status === '進行中' ? 'selected' : ''}>進行中</option>
+              <option ${data.status === '完了' ? 'selected' : ''}>完了</option>
+            </select>
+          </div>
+        `;
       } else {
-        tasksTab.classList.add('hidden');
-        hotelsTab.classList.remove('hidden');
-        btnHotels.className = "flex items-center gap-2 py-2.5 px-5 text-xs sm:text-sm font-bold rounded-xl bg-white text-indigo-900 shadow-md transition-all";
-        btnTasks.className = "flex items-center gap-2 py-2.5 px-5 text-xs sm:text-sm font-bold rounded-xl text-slate-600 hover:text-slate-900 transition-all";
+        container.innerHTML = `
+          <div><label class="font-bold text-slate-600">施設・ホテル名</label><input type="text" id="field-name" value="${data.name || ''}" required class="w-full mt-1 p-2 border rounded-lg"></div>
+          <div><label class="font-bold text-slate-600">連絡日</label><input type="date" id="field-date" value="${data.date || ''}" class="w-full mt-1 p-2 border rounded-lg"></div>
+          <div><label class="font-bold text-slate-600">ステータス</label>
+            <select id="field-status" class="w-full mt-1 p-2 border rounded-lg">
+              <option ${data.status === '送信準備中' ? 'selected' : ''}>送信準備中</option>
+              <option ${data.status === '打診中' ? 'selected' : ''}>打診中</option>
+              <option ${data.status === '許諾済' ? 'selected' : ''}>許諾済</option>
+            </select>
+          </div>
+          <div><label class="font-bold text-slate-600">設置場所</label><input type="text" id="field-location" value="${data.location || ''}" class="w-full mt-1 p-2 border rounded-lg"></div>
+          <div><label class="font-bold text-slate-600">資材</label><input type="text" id="field-material" value="${data.material || ''}" class="w-full mt-1 p-2 border rounded-lg"></div>
+          <div><label class="font-bold text-slate-600">メモ</label><textarea id="field-memo" class="w-full mt-1 p-2 border rounded-lg">${data.memo || ''}</textarea></div>
+        `;
       }
     }
 
-    function renderTasks() {
-      const tbody = document.getElementById('task-list-body');
-      tbody.innerHTML = '';
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const endpoint = currentView === 'tasks' ? '/api/tasks' : '/api/hotels';
+      const method = editingItemId ? 'PUT' : 'POST';
 
-      tasks.forEach((t, i) => {
-        tbody.innerHTML += `
-          <tr class="hover:bg-white/80 transition-colors">
-            <td class="py-2.5 px-4">
-              <textarea onchange="updateTaskField(${i}, 'title', this.value)" rows="2" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-sky-300 rounded-lg font-medium text-slate-800 transition-all resize-y leading-tight">${t.title}</textarea>
-            </td>
-            <td class="py-2.5 px-4">
-              <input type="text" value="${t.team}" onchange="updateTaskField(${i}, 'team', this.value)" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-sky-300 rounded-lg text-slate-600 transition-all">
-            </td>
-            <td class="py-2.5 px-4">
-              <input type="date" value="${t.due}" onchange="updateTaskField(${i}, 'due', this.value)" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-sky-300 rounded-lg text-slate-600 transition-all">
-            </td>
-            <td class="py-2.5 px-4">
-              <select onchange="updateTaskField(${i}, 'status', this.value)" class="px-2.5 py-1.5 border border-slate-200 rounded-lg font-bold text-xs bg-white/90 shadow-sm focus:outline-none">
-                <option value="未着手" ${t.status === '未着手' ? 'selected' : ''}>🔴 未着手</option>
-                <option value="進行中" ${t.status === '進行中' ? 'selected' : ''}>🟡 進行中</option>
-                <option value="完了" ${t.status === '完了' ? 'selected' : ''}>🟢 完了</option>
-              </select>
-            </td>
-            <td class="py-2.5 px-4 text-right">
-              <button onclick="deleteTask(${i})" class="p-1.5 text-slate-400 hover:text-rose-600 transition-all">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
-            </td>
-          </tr>
-        `;
-      });
+      let payload = {};
+      if (currentView === 'tasks') {
+        payload = {
+          title: document.getElementById('field-title').value,
+          team: document.getElementById('field-team').value,
+          due: document.getElementById('field-due').value || '未定',
+          status: document.getElementById('field-status').value
+        };
+      } else {
+        payload = {
+          name: document.getElementById('field-name').value,
+          date: document.getElementById('field-date').value,
+          status: document.getElementById('field-status').value,
+          location: document.getElementById('field-location').value,
+          material: document.getElementById('field-material').value,
+          memo: document.getElementById('field-memo').value
+        };
+      }
+
+      if (editingItemId) payload.id = editingItemId;
+
+      try {
+        await apiFetch(endpoint, method, payload);
+        closeAddModal();
+        await fetchDashboardData();
+      } catch (err) {
+        alert("保存に失敗しました");
+      }
+    }
+
+    async function deleteItem(type, id) {
+      if (!confirm("本当に削除しますか？")) return;
+      try {
+        await apiFetch(`/api/${type}`, 'DELETE', { id });
+        await fetchDashboardData();
+      } catch (err) {
+        alert("削除に失敗しました");
+      }
+    }
+
+    // --- DOMロード後の初期化 ---
+    document.addEventListener('DOMContentLoaded', async () => {
       lucide.createIcons();
-    }
 
-    function renderHotels() {
-      const tbody = document.getElementById('hotel-list-body');
-      tbody.innerHTML = '';
+      // セッションの再認証チェック
+      if (currentAuthHeader) {
+        try {
+          await fetchDashboardData();
+          setSessionAuth(
+            currentAuthHeader, 
+            currentAuthType, 
+            currentAuthType === 'ADMIN' ? '管理者' : 'LINEユーザー', 
+            null
+          );
+        } catch (e) {
+          sessionStorage.clear();
+        }
+      }
 
-      hotels.forEach((h, i) => {
-        tbody.innerHTML += `
-          <tr class="hover:bg-white/80 transition-colors">
-            <td class="py-2.5 px-4">
-              <textarea onchange="updateHotelField(${i}, 'name', this.value)" rows="2" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-indigo-300 rounded-lg font-bold text-slate-800 transition-all resize-y leading-tight">${h.name}</textarea>
-            </td>
-            <td class="py-2.5 px-4">
-              <input type="text" value="${h.date}" onchange="updateHotelField(${i}, 'date', this.value)" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-indigo-300 rounded-lg text-slate-600 transition-all">
-            </td>
-            <td class="py-2.5 px-4">
-              <select onchange="updateHotelField(${i}, 'status', this.value)" class="px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-bold bg-white/90 shadow-sm focus:outline-none">
-                <option value="送信準備中" ${h.status === '送信準備中' ? 'selected' : ''}>⏳ 送信準備中</option>
-                <option value="送信済" ${h.status === '送信済' ? 'selected' : ''}>📨 送信済</option>
-                <option value="返信あり/調整中" ${h.status === '返信あり/調整中' ? 'selected' : ''}>💬 調整中</option>
-                <option value="内諾/素材回収中" ${h.status === '内諾/素材回収中' ? 'selected' : ''}>🤝 素材回収中</option>
-                <option value="設置完了" ${h.status === '設置完了' ? 'selected' : ''}>🎉 設置完了</option>
-              </select>
-            </td>
-            <td class="py-2.5 px-4">
-              <input type="text" value="${h.location}" onchange="updateHotelField(${i}, 'location', this.value)" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-indigo-300 rounded-lg text-slate-600 transition-all">
-            </td>
-            <td class="py-2.5 px-4">
-              <select onchange="updateHotelField(${i}, 'material', this.value)" class="px-2 py-1 border border-slate-200 rounded-lg text-xs bg-white">
-                <option value="未" ${h.material === '未' ? 'selected' : ''}>未</option>
-                <option value="完了" ${h.material === '完了' ? 'selected' : ''}>完了</option>
-              </select>
-            </td>
-            <td class="py-2.5 px-4">
-              <textarea onchange="updateHotelField(${i}, 'memo', this.value)" rows="2" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-indigo-300 rounded-lg text-xs transition-all resize-y leading-relaxed">${h.memo}</textarea>
-            </td>
-            <td class="py-2.5 px-4 text-right">
-              <button onclick="deleteHotel(${i})" class="p-1.5 text-slate-400 hover:text-rose-600 transition-all">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
-            </td>
-          </tr>
-        `;
-      });
-      lucide.createIcons();
-    }
-
-    function updateTaskField(i, field, val) { tasks[i][field] = val; saveData(); }
-    function updateHotelField(i, field, val) { hotels[i][field] = val; saveData(); }
-
-    function addTask() {
-      const title = document.getElementById('task-title').value.trim();
-      const team = document.getElementById('task-team').value.trim() || '全チーム';
-      const due = document.getElementById('task-due').value || '未定';
-      if (!title) return alert('タスク名を入力してください');
-      tasks.push({ id: Date.now(), title, team, due, status: '未着手' });
-      document.getElementById('task-title').value = '';
-      saveData(); renderTasks();
-    }
-
-    function addHotel() {
-      const name = document.getElementById('hotel-name').value.trim();
-      const date = document.getElementById('hotel-date').value.trim() || '未定';
-      const location = document.getElementById('hotel-loc').value.trim() || '未定';
-      if (!name) return alert('企業・団体名を入力してください');
-      hotels.push({ id: Date.now(), name, date, status: '送信準備中', location, material: '未', memo: '' });
-      document.getElementById('hotel-name').value = '';
-      saveData(); renderHotels();
-    }
-
-    function deleteTask(i) { tasks.splice(i, 1); saveData(); renderTasks(); }
-    function deleteHotel(i) { hotels.splice(i, 1); saveData(); renderHotels(); }
-    function resetTasks() { tasks = [...defaultTasks]; saveData(); renderTasks(); }
-    function resetHotels() { hotels = [...defaultHotels]; saveData(); renderHotels(); }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      renderTasks();
-      renderHotels();
-      updateStats();
-      lucide.createIcons();
+      // LINE LIFF の試行
+      initLiff();
     });
   </script>
 </body>
