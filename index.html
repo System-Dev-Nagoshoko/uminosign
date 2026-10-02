@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>海のサインプロジェクト | ホワイトクリスタル・ダッシュボード</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body { font-family: 'Plus Jakarta Sans', 'Noto Sans JP', sans-serif; }
+
+    /* --- ホワイト・グラデーション背景 --- */
+    .crystal-bg {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 35%, #e2e8f0 70%, #f8fafc 100%);
+      background-size: 200% 200%;
+      animation: crystalGradient 16s ease infinite;
+    }
+
+    @keyframes crystalGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* --- 浮遊するクリスタル＆図形アニメーション --- */
+    .shape {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0.45;
+      animation: floatShape 14s ease-in-out infinite alternate;
+    }
+
+    .crystal-1 {
+      width: 90px; height: 90px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(129, 140, 248, 0.1));
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      transform: rotate(45deg);
+      top: 10%; left: 8%;
+      box-shadow: 0 8px 32px 0 rgba(14, 165, 233, 0.15);
+      animation-duration: 12s;
+    }
+
+    .crystal-2 {
+      width: 140px; height: 140px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(56, 189, 248, 0.15));
+      border: 1.5px solid rgba(186, 230, 253, 0.6);
+      transform: rotate(25deg);
+      top: 55%; right: 5%;
+      backdrop-filter: blur(4px);
+      animation-duration: 18s;
+    }
+
+    .crystal-3 {
+      width: 180px; height: 180px;
+      border: 2px stroke;
+      border-image: linear-gradient(135deg, rgba(56, 189, 248, 0.5), rgba(168, 85, 247, 0.2)) 1;
+      border-radius: 50%;
+      top: 35%; left: 20%;
+      animation-duration: 22s;
+    }
+
+    .crystal-4 {
+      width: 50px; height: 50px;
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(56, 189, 248, 0.2));
+      transform: rotate(45deg);
+      bottom: 12%; left: 15%;
+      animation-duration: 10s;
+    }
+
+    @keyframes floatShape {
+      0% { transform: translateY(0px) rotate(0deg) scale(1); }
+      50% { transform: translateY(-35px) rotate(180deg) scale(1.08); }
+      100% { transform: translateY(360deg) scale(0.95); }
+    }
+
+    /* クリスタルグラスカード */
+    .crystal-card {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 10px 30px -5px rgba(148, 163, 184, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+    }
+  </style>
+</head>
+<body class="crystal-bg text-slate-800 antialiased min-h-screen pb-16 relative overflow-x-hidden">
+
+  <!-- 💎 浮遊するクリスタル図形レイヤー -->
+  <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+    <div class="shape crystal-1"></div>
+    <div class="shape crystal-2"></div>
+    <div class="shape crystal-3"></div>
+    <div class="shape crystal-4"></div>
+  </div>
+
+  <!-- メインコンテンツ -->
+  <div class="relative z-10">
+
+    <!-- ヘッダー -->
+    <header class="bg-white/80 backdrop-blur-md text-slate-800 shadow-sm border-b border-white sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div class="flex items-center gap-3">
+          <div class="p-2.5 bg-gradient-to-br from-sky-400 to-indigo-500 rounded-2xl text-white shadow-md shadow-sky-500/20">
+            <i data-lucide="gem" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-lg sm:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-sky-900 to-indigo-900 bg-clip-text text-transparent">海のサインプロジェクト</h1>
+              <span class="px-2.5 py-0.5 text-[10px] font-extrabold bg-sky-100 text-sky-700 border border-sky-200 rounded-full shadow-2xl">CRYSTAL D1</span>
+            </div>
+            <p class="text-xs text-slate-500 font-medium">うみぽす甲子園 | 海のサインプロジェクト 進捗基盤</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            D1 Synced
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
+
+      <!-- セキュリティ警告 -->
+      <div class="crystal-card !bg-amber-50/70 !border-amber-200/80 p-4 rounded-2xl shadow-sm flex items-start gap-3.5">
+        <div class="p-2 bg-amber-500/10 rounded-xl text-amber-600 flex-shrink-0">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+        <div class="space-y-0.5">
+          <h3 class="text-xs sm:text-sm font-bold text-amber-900">【絶対遵守】学校代表電話への連絡依頼厳禁ルール</h3>
+          <p class="text-xs text-amber-800/80 leading-relaxed">
+            本企画は校内有志プロジェクトです。先方からの問い合わせ先は「専用メール」のみを案内し、学校代表電話へ連絡が行かないよう徹底してください。
+          </p>
+        </div>
+      </div>
+
+      <!-- 統計サマリーカード -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="crystal-card p-4 rounded-2xl hover:translate-y-[-2px] transition-all flex items-center gap-3.5">
+          <div class="p-3 bg-sky-500/10 text-sky-600 rounded-xl border border-sky-100">
+            <i data-lucide="check-square" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-slate-400">全体タスク</p>
+            <p id="stat-tasks-count" class="text-xl font-extrabold text-slate-800">0</p>
+          </div>
+        </div>
+
+        <div class="crystal-card p-4 rounded-2xl hover:translate-y-[-2px] transition-all flex items-center gap-3.5">
+          <div class="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl border border-emerald-100">
+            <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-slate-400">完了タスク</p>
+            <p id="stat-tasks-done" class="text-xl font-extrabold text-slate-800">0</p>
+          </div>
+        </div>
+
+        <div class="crystal-card p-4 rounded-2xl hover:translate-y-[-2px] transition-all flex items-center gap-3.5">
+          <div class="p-3 bg-indigo-500/10 text-indigo-600 rounded-xl border border-indigo-100">
+            <i data-lucide="building-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-slate-400">対象企業・団体</p>
+            <p id="stat-hotels-count" class="text-xl font-extrabold text-slate-800">0</p>
+          </div>
+        </div>
+
+        <div class="crystal-card p-4 rounded-2xl hover:translate-y-[-2px] transition-all flex items-center gap-3.5">
+          <div class="p-3 bg-amber-500/10 text-amber-600 rounded-xl border border-amber-100">
+            <i data-lucide="send" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-slate-400">打診進捗</p>
+            <p id="stat-hotels-sent" class="text-xl font-extrabold text-slate-800">0 / 0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- タブ切り替え -->
+      <div class="flex p-1.5 bg-slate-200/50 backdrop-blur-md rounded-2xl w-fit gap-1 border border-white">
+        <button id="btn-tab-tasks" onclick="switchTab('tasks')" class="flex items-center gap-2 py-2.5 px-5 text-xs sm:text-sm font-bold rounded-xl bg-white text-sky-900 shadow-md transition-all">
+          <i data-lucide="list-todo" class="w-4 h-4 text-sky-600"></i> タスク管理
+        </button>
+        <button id="btn-tab-hotels" onclick="switchTab('hotels')" class="flex items-center gap-2 py-2.5 px-5 text-xs sm:text-sm font-bold rounded-xl text-slate-600 hover:text-slate-900 transition-all">
+          <i data-lucide="building-2" class="w-4 h-4 text-indigo-600"></i> 交渉中の企業・団体
+        </button>
+      </div>
+
+      <!-- TAB 1: メインタスク管理 -->
+      <div id="tab-tasks" class="space-y-5">
+        <div class="crystal-card p-5 rounded-2xl space-y-4">
+          <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-4 h-4 text-sky-600"></i> 新規タスクの登録
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <input type="text" id="task-title" placeholder="タスク内容" class="col-span-1 sm:col-span-2 px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-sky-400 focus:bg-white focus:outline-none transition-all">
+            <input type="text" id="task-team" placeholder="担当チーム / 名前" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-sky-400 focus:bg-white focus:outline-none transition-all">
+            <input type="date" id="task-due" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-sky-400 focus:bg-white focus:outline-none transition-all">
+            <button onclick="addTask()" class="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 active:scale-95">
+              <i data-lucide="plus" class="w-4 h-4"></i> 追加
+            </button>
+          </div>
+        </div>
+
+        <div class="crystal-card rounded-2xl overflow-hidden">
+          <div class="px-5 py-4 border-b border-slate-100 bg-white/50 flex justify-between items-center">
+            <h3 class="text-xs sm:text-sm font-bold text-slate-700">タスク一覧（セル直接編集可能）</h3>
+            <button onclick="resetTasks()" class="text-xs text-rose-500 hover:text-rose-700 font-medium">初期化</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50/80 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-100">
+                  <th class="py-3 px-4 min-w-[200px]">タスク名</th>
+                  <th class="py-3 px-4 min-w-[120px]">担当</th>
+                  <th class="py-3 px-4 min-w-[130px]">期限</th>
+                  <th class="py-3 px-4 min-w-[130px]">状態</th>
+                  <th class="py-3 px-4 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="task-list-body" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: 交渉中の企業・団体 -->
+      <div id="tab-hotels" class="hidden space-y-5">
+        <div class="crystal-card p-5 rounded-2xl space-y-4">
+          <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> 対象企業・団体の追加
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <input type="text" id="hotel-name" placeholder="企業・団体名" class="col-span-1 sm:col-span-2 px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:bg-white focus:outline-none transition-all">
+            <input type="text" id="hotel-date" placeholder="打診日 (例: 10/06)" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:bg-white focus:outline-none transition-all">
+            <input type="text" id="hotel-loc" placeholder="設置予定場所" class="px-3.5 py-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-indigo-400 focus:bg-white focus:outline-none transition-all">
+            <button onclick="addHotel()" class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 active:scale-95">
+              <i data-lucide="plus" class="w-4 h-4"></i> 追加
+            </button>
+          </div>
+        </div>
+
+        <div class="crystal-card rounded-2xl overflow-hidden">
+          <div class="px-5 py-4 border-b border-slate-100 bg-white/50 flex justify-between items-center">
+            <h3 class="text-xs sm:text-sm font-bold text-slate-700">交渉中の企業・団体一覧（全項目・複数行全表示対応）</h3>
+            <button onclick="resetHotels()" class="text-xs text-rose-500 hover:text-rose-700 font-medium">初期化</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50/80 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-100">
+                  <th class="py-3 px-4 min-w-[200px]">企業・団体名</th>
+                  <th class="py-3 px-4 min-w-[90px]">打診日</th>
+                  <th class="py-3 px-4 min-w-[140px]">交渉ステータス</th>
+                  <th class="py-3 px-4 min-w-[140px]">設置場所</th>
+                  <th class="py-3 px-4 min-w-[80px]">素材回収</th>
+                  <th class="py-3 px-4 min-w-[240px]">次回アクション / メモ</th>
+                  <th class="py-3 px-4 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="hotel-list-body" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    const defaultTasks = [
+      { id: 1, title: '打診用A4資料・メール本文の完成', team: '交渉チーム', due: '2026-10-03', status: '完了' },
+      { id: 2, title: '卓上アクリルサイン試作（角R加工＋UV印刷）', team: 'デザインチーム', due: '2026-10-03', status: '進行中' },
+      { id: 3, title: '特設Webサイト（リダイレクト枠・多言語）骨組作成', team: 'Webチーム', due: '2026-10-04', status: '進行中' },
+      { id: 4, title: '二次元コード飛び先Googleフォーム作成', team: 'Webチーム', due: '2026-10-05', status: '未着手' },
+      { id: 5, title: '指導教員への送信前最終確認・承認', team: '全チーム', due: '2026-10-05', status: '未着手' },
+      { id: 6, title: 'ターゲット4ホテルへのメール一斉送信', team: '交渉チーム', due: '2026-10-06', status: '未着手' }
+    ];
+
+    const defaultHotels = [
+      { id: 1, name: 'オリエンタルホテル 沖縄リゾート＆スパ', date: '10/06(火)', status: '送信準備中', location: 'フロント/マリン受付', material: '未', memo: '教員直通連絡先を明記して送信' },
+      { id: 2, name: 'TWINLINE HOTEL YANBARU OKINAWA JAPAN', date: '10/06(火)', status: '送信準備中', location: 'ロビーカウンター', material: '未', memo: '教員直通連絡先を明記して送信' },
+      { id: 3, name: 'ホテルゆがふいんおきなわ', date: '10/06(火)', status: '送信準備中', location: '1階フロント卓上', material: '未', memo: '教員直通連絡先を明記して送信' },
+      { id: 4, name: 'オクマ プライベートビーチ ＆ リゾート', date: '10/06(火)', status: '送信準備中', location: 'ビーチ受付カウンター', material: '未', memo: '教員直通連絡先を明記して送信' }
+    ];
+
+    let tasks = JSON.parse(localStorage.getItem('umi_tasks_v13')) || defaultTasks;
+    let hotels = JSON.parse(localStorage.getItem('umi_hotels_v13')) || defaultHotels;
+
+    function saveData() {
+      localStorage.setItem('umi_tasks_v13', JSON.stringify(tasks));
+      localStorage.setItem('umi_hotels_v13', JSON.stringify(hotels));
+      updateStats();
+    }
+
+    function updateStats() {
+      document.getElementById('stat-tasks-count').innerText = tasks.length;
+      document.getElementById('stat-tasks-done').innerText = tasks.filter(t => t.status === '完了').length;
+      document.getElementById('stat-hotels-count').innerText = hotels.length;
+      const sentCount = hotels.filter(h => h.status !== '送信準備中').length;
+      document.getElementById('stat-hotels-sent').innerText = `${sentCount} / ${hotels.length}`;
+    }
+
+    function switchTab(tab) {
+      const tasksTab = document.getElementById('tab-tasks');
+      const hotelsTab = document.getElementById('tab-hotels');
+      const btnTasks = document.getElementById('btn-tab-tasks');
+      const btnHotels = document.getElementById('btn-tab-hotels');
+
+      if (tab === 'tasks') {
+        tasksTab.classList.remove('hidden');
+        hotelsTab.classList.add('hidden');
+        btnTasks.className = "flex items-center gap-2 py-2.5 px-5 text-xs sm:text-sm font-bold rounded-xl bg-white text-sky-900 shadow-md transition-all";
+        btnHotels.className = "flex items-center gap-2 py-2.5 px-5 text-xs sm:text-sm font-bold rounded-xl text-slate-600 hover:text-slate-900 transition-all";
+      } else {
+        tasksTab.classList.add('hidden');
+        hotelsTab.classList.remove('hidden');
+        btnHotels.className = "flex items-center gap-2 py-2.5 px-5 text-xs sm:text-sm font-bold rounded-xl bg-white text-indigo-900 shadow-md transition-all";
+        btnTasks.className = "flex items-center gap-2 py-2.5 px-5 text-xs sm:text-sm font-bold rounded-xl text-slate-600 hover:text-slate-900 transition-all";
+      }
+    }
+
+    function renderTasks() {
+      const tbody = document.getElementById('task-list-body');
+      tbody.innerHTML = '';
+
+      tasks.forEach((t, i) => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-white/80 transition-colors">
+            <td class="py-2.5 px-4">
+              <textarea onchange="updateTaskField(${i}, 'title', this.value)" rows="2" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-sky-300 rounded-lg font-medium text-slate-800 transition-all resize-y leading-tight">${t.title}</textarea>
+            </td>
+            <td class="py-2.5 px-4">
+              <input type="text" value="${t.team}" onchange="updateTaskField(${i}, 'team', this.value)" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-sky-300 rounded-lg text-slate-600 transition-all">
+            </td>
+            <td class="py-2.5 px-4">
+              <input type="date" value="${t.due}" onchange="updateTaskField(${i}, 'due', this.value)" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-sky-300 rounded-lg text-slate-600 transition-all">
+            </td>
+            <td class="py-2.5 px-4">
+              <select onchange="updateTaskField(${i}, 'status', this.value)" class="px-2.5 py-1.5 border border-slate-200 rounded-lg font-bold text-xs bg-white/90 shadow-sm focus:outline-none">
+                <option value="未着手" ${t.status === '未着手' ? 'selected' : ''}>🔴 未着手</option>
+                <option value="進行中" ${t.status === '進行中' ? 'selected' : ''}>🟡 進行中</option>
+                <option value="完了" ${t.status === '完了' ? 'selected' : ''}>🟢 完了</option>
+              </select>
+            </td>
+            <td class="py-2.5 px-4 text-right">
+              <button onclick="deleteTask(${i})" class="p-1.5 text-slate-400 hover:text-rose-600 transition-all">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    function renderHotels() {
+      const tbody = document.getElementById('hotel-list-body');
+      tbody.innerHTML = '';
+
+      hotels.forEach((h, i) => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-white/80 transition-colors">
+            <td class="py-2.5 px-4">
+              <textarea onchange="updateHotelField(${i}, 'name', this.value)" rows="2" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-indigo-300 rounded-lg font-bold text-slate-800 transition-all resize-y leading-tight">${h.name}</textarea>
+            </td>
+            <td class="py-2.5 px-4">
+              <input type="text" value="${h.date}" onchange="updateHotelField(${i}, 'date', this.value)" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-indigo-300 rounded-lg text-slate-600 transition-all">
+            </td>
+            <td class="py-2.5 px-4">
+              <select onchange="updateHotelField(${i}, 'status', this.value)" class="px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-bold bg-white/90 shadow-sm focus:outline-none">
+                <option value="送信準備中" ${h.status === '送信準備中' ? 'selected' : ''}>⏳ 送信準備中</option>
+                <option value="送信済" ${h.status === '送信済' ? 'selected' : ''}>📨 送信済</option>
+                <option value="返信あり/調整中" ${h.status === '返信あり/調整中' ? 'selected' : ''}>💬 調整中</option>
+                <option value="内諾/素材回収中" ${h.status === '内諾/素材回収中' ? 'selected' : ''}>🤝 素材回収中</option>
+                <option value="設置完了" ${h.status === '設置完了' ? 'selected' : ''}>🎉 設置完了</option>
+              </select>
+            </td>
+            <td class="py-2.5 px-4">
+              <input type="text" value="${h.location}" onchange="updateHotelField(${i}, 'location', this.value)" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-indigo-300 rounded-lg text-slate-600 transition-all">
+            </td>
+            <td class="py-2.5 px-4">
+              <select onchange="updateHotelField(${i}, 'material', this.value)" class="px-2 py-1 border border-slate-200 rounded-lg text-xs bg-white">
+                <option value="未" ${h.material === '未' ? 'selected' : ''}>未</option>
+                <option value="完了" ${h.material === '完了' ? 'selected' : ''}>完了</option>
+              </select>
+            </td>
+            <td class="py-2.5 px-4">
+              <textarea onchange="updateHotelField(${i}, 'memo', this.value)" rows="2" class="w-full px-2.5 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent focus:border-indigo-300 rounded-lg text-xs transition-all resize-y leading-relaxed">${h.memo}</textarea>
+            </td>
+            <td class="py-2.5 px-4 text-right">
+              <button onclick="deleteHotel(${i})" class="p-1.5 text-slate-400 hover:text-rose-600 transition-all">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    function updateTaskField(i, field, val) { tasks[i][field] = val; saveData(); }
+    function updateHotelField(i, field, val) { hotels[i][field] = val; saveData(); }
+
+    function addTask() {
+      const title = document.getElementById('task-title').value.trim();
+      const team = document.getElementById('task-team').value.trim() || '全チーム';
+      const due = document.getElementById('task-due').value || '未定';
+      if (!title) return alert('タスク名を入力してください');
+      tasks.push({ id: Date.now(), title, team, due, status: '未着手' });
+      document.getElementById('task-title').value = '';
+      saveData(); renderTasks();
+    }
+
+    function addHotel() {
+      const name = document.getElementById('hotel-name').value.trim();
+      const date = document.getElementById('hotel-date').value.trim() || '未定';
+      const location = document.getElementById('hotel-loc').value.trim() || '未定';
+      if (!name) return alert('企業・団体名を入力してください');
+      hotels.push({ id: Date.now(), name, date, status: '送信準備中', location, material: '未', memo: '' });
+      document.getElementById('hotel-name').value = '';
+      saveData(); renderHotels();
+    }
+
+    function deleteTask(i) { tasks.splice(i, 1); saveData(); renderTasks(); }
+    function deleteHotel(i) { hotels.splice(i, 1); saveData(); renderHotels(); }
+    function resetTasks() { tasks = [...defaultTasks]; saveData(); renderTasks(); }
+    function resetHotels() { hotels = [...defaultHotels]; saveData(); renderHotels(); }
+
+    renderTasks();
+    renderHotels();
+    updateStats();
+  </script>
+</body>
+</html>
