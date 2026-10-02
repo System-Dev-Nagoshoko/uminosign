@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>海のサインプロジェクト |タスク管理Dashboard</title>
+  <title>海のサインプロジェクト | タスク管理Dashboard</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -216,6 +216,9 @@
           </div>
         </div>
       </div>
+
+      <!-- 👥 ログインユーザー履歴カード（ダッシュボード最下部に設置） -->
+      <div id="user-logs-container" class="space-y-4"></div>
     </main>
   </div>
 
@@ -239,7 +242,7 @@
 
   <script>
     // ⚙️ システム設定
-    const WORKER_URL = 'uminosign.zinn1019t.workers.dev'; // Worker URL
+    const WORKER_URL = 'https://uminosign.zinn1019t.workers.dev'; // Protocol付きWorker URL
     const LIFF_ID = '2011830749-oBGQ72bz'; // LIFF ID
 
     // 状態管理
@@ -248,6 +251,7 @@
     let currentView = 'tasks';
     let tasks = [];
     let hotels = [];
+    let userLogs = [];
     let editingItemId = null;
 
     // --- ① 認証処理 & LINE LIFF 初期化 ---
@@ -258,7 +262,12 @@
           if (liff.isLoggedIn()) {
             const idToken = liff.getIDToken();
             const profile = await liff.getProfile();
-            setSessionAuth(`LINE_TOKEN:${idToken}`, 'LINE', profile.displayName, profile.pictureUrl);
+            const token = `LINE_TOKEN:${idToken}`;
+            
+            // ログインログの自動保存（LINE）
+            await recordLogin(profile.displayName, 'LINE', profile.pictureUrl, token);
+
+            setSessionAuth(token, 'LINE', profile.displayName, profile.pictureUrl);
             await fetchDashboardData();
           }
         } catch (err) {
@@ -295,7 +304,6 @@
     async function loginWithAdmin() {
       const id = document.getElementById('admin-id-input').value.trim();
       const pass = document.getElementById('admin-pass-input').value.trim();
-      const errEl = document.getElementById('auth-error-msg');
 
       if (!id || !pass) {
         showAuthError("IDとパスワードを入力してください");
@@ -307,7 +315,12 @@
 
       try {
         await fetchDashboardData();
-        setSessionAuth(adminAuthToken, 'ADMIN', `管理者 (${id})`, null);
+        const userName = `管理者 (${id})`;
+
+        // ログインログの自動保存（ADMIN）
+        await recordLogin(userName, 'ADMIN', '', adminAuthToken);
+
+        setSessionAuth(adminAuthToken, 'ADMIN', userName, null);
       } catch (err) {
         showAuthError("管理者IDまたはパスワードが正しくありません");
       }
@@ -348,7 +361,27 @@
       location.reload();
     }
 
-    // --- ② API通信 & データ取得 ---
+    // --- ② ログインログ送信処理 ---
+    async function recordLogin(userName, loginType, pictureUrl = '', token = '') {
+      try {
+        await fetch(`${WORKER_URL}/api/logs`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Custom-Auth': token || currentAuthHeader
+          },
+          body: JSON.stringify({
+            user_name: userName,
+            login_type: loginType,
+            picture_url: pictureUrl || ''
+          })
+        });
+      } catch (err) {
+        console.error('ログインログ記録エラー:', err);
+      }
+    }
+
+    // --- ③ API通信 & データ取得 ---
     async function apiFetch(endpoint, method = 'GET', body = null) {
       const headers = {
         'Content-Type': 'application/json',
@@ -366,10 +399,15 @@
     async function fetchDashboardData() {
       tasks = await apiFetch('/api/tasks');
       hotels = await apiFetch('/api/hotels');
+      try {
+        userLogs = await apiFetch('/api/logs');
+      } catch (e) {
+        userLogs = [];
+      }
       render();
     }
 
-    // --- ③ ビューレンダリング ---
+    // --- ④ ビューレンダリング ---
     function switchView(view) {
       currentView = view;
       const tasksBtn = document.getElementById('view-btn-tasks');
@@ -394,6 +432,7 @@
       updateStats();
       renderTasksTable();
       renderHotelsTable();
+      renderUserLogsTable();
       lucide.createIcons();
     }
 
@@ -447,6 +486,73 @@
       `).join('');
     }
 
+    function renderUserLogsTable() {
+      const container = document.getElementById('user-logs-container');
+      if (!container) return;
+
+      if (!userLogs || userLogs.length === 0) {
+        container.innerHTML = `
+          <div class="crystal-card p-5 rounded-2xl">
+            <h3 class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-2">
+              <i data-lucide="users" class="w-4 h-4 text-sky-600"></i> ログインユーザー履歴
+            </h3>
+            <p class="text-xs text-slate-400 text-center py-4">ログイン履歴はありません</p>
+          </div>`;
+        return;
+      }
+
+      const rowsHtml = userLogs.map(log => {
+        const isLine = log.login_type === 'LINE';
+        const badgeColor = isLine 
+          ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
+          : 'bg-indigo-100 text-indigo-700 border-indigo-200';
+        const avatar = log.picture_url 
+          ? `<img src="${log.picture_url}" class="w-5 h-5 rounded-full border border-slate-200 object-cover">` 
+          : `<div class="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-600">${log.user_name ? log.user_name.charAt(0) : 'U'}</div>`;
+
+        return `
+          <tr class="hover:bg-white/50 transition-all text-xs">
+            <td class="p-3 flex items-center gap-2 font-bold text-slate-800">
+              ${avatar}
+              <span>${log.user_name}</span>
+            </td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-md border ${badgeColor}">
+                ${log.login_type}
+              </span>
+            </td>
+            <td class="p-3 text-slate-500 font-mono text-[11px]">${log.logged_at}</td>
+          </tr>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="crystal-card rounded-2xl overflow-hidden shadow-sm">
+          <div class="p-4 border-b border-slate-200/60 flex justify-between items-center bg-slate-100/40">
+            <h3 class="text-xs font-extrabold text-slate-800 flex items-center gap-2">
+              <i data-lucide="users" class="w-4 h-4 text-sky-600"></i>
+              ログインユーザー履歴 (最新50件)
+            </h3>
+            <button onclick="fetchDashboardData()" class="text-[11px] font-bold text-sky-600 hover:text-sky-700 hover:underline">最新に更新</button>
+          </div>
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100/60 border-b border-slate-200/60 text-slate-500 font-bold uppercase tracking-wider">
+                  <th class="p-3">ユーザー</th>
+                  <th class="p-3">種別</th>
+                  <th class="p-3">アクセス日時 (JST)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
     function getStatusBadge(status) {
       const styles = {
         '完了': 'bg-emerald-100 text-emerald-700',
@@ -460,7 +566,7 @@
       return `<span class="px-2.5 py-1 rounded-md text-[11px] font-extrabold ${cls}">${status}</span>`;
     }
 
-    // --- ④ モーダル & CRUD 操作 ---
+    // --- ⑤ モーダル & CRUD 操作 ---
     function openAddModal() {
       editingItemId = null;
       document.getElementById('modal-title').innerText = currentView === 'tasks' ? '新規タスク追加' : '新規交渉先追加';
