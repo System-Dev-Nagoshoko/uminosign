@@ -11,7 +11,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- LINE LIFF SDK (defer付きで確実に後から読み込み) -->
+  <!-- LINE LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>
 
   <!-- Google Fonts -->
@@ -125,15 +125,19 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6 pb-20">
-      <div class="crystal-card !bg-amber-50/80 !border-amber-200 p-4 rounded-2xl shadow-sm flex items-start gap-3.5">
-        <div class="p-2 bg-amber-500/10 rounded-xl text-amber-600 flex-shrink-0">
+      
+      <!-- ⚠️ 運用・連絡重要ルールカード -->
+      <div class="crystal-card !bg-amber-50/90 !border-amber-200 p-4 sm:p-5 rounded-2xl shadow-sm flex items-start gap-3.5">
+        <div class="p-2.5 bg-amber-500/10 rounded-xl text-amber-600 flex-shrink-0 mt-0.5">
           <i data-lucide="shield-alert" class="w-5 h-5"></i>
         </div>
-        <div class="space-y-0.5">
-          <h3 class="text-xs sm:text-sm font-bold text-amber-900">【重要ルール】学校代表電話への連絡・問合せ厳禁</h3>
-          <p class="text-xs text-amber-800/80 leading-relaxed">
-            自治体・ホテル交渉時は必ず指定の専用メールアドレスを案内し、学校宛の直接電話を防いでください。
-          </p>
+        <div class="space-y-1 text-xs">
+          <h3 class="font-extrabold text-amber-950 text-sm">【連絡・運用における重要指示】</h3>
+          <ul class="list-disc list-inside text-amber-900/90 space-y-1 leading-relaxed">
+            <li><strong>対応主体:</strong> 交渉・問合せ対応の基本軸は<span class="font-bold underline decoration-amber-400 decoration-2">生徒</span>となります。</li>
+            <li><strong>連絡先の切り替え:</strong> 教員の介入が必要になった場合のみ、案内する連絡先窓口を変更してください。（学校代表電話への直接連絡は厳禁）</li>
+            <li><strong>発信前の全員確認:</strong> メール送信やブログ等のWeb更新を行う場合は、必ず<span class="font-bold underline decoration-amber-400 decoration-2">事前に関係者・メンバー全員で内容の確認</span>を行ってください。</li>
+          </ul>
         </div>
       </div>
 
@@ -178,13 +182,14 @@
                 <tr class="bg-slate-100/60 border-b border-slate-200/60 text-slate-500 font-bold uppercase tracking-wider">
                   <th class="p-3.5">タスク名</th>
                   <th class="p-3.5">担当チーム</th>
+                  <th class="p-3.5">詳細 / 説明</th>
                   <th class="p-3.5">期限</th>
                   <th class="p-3.5">ステータス</th>
                   <th class="p-3.5 text-right">操作</th>
                 </tr>
               </thead>
               <tbody id="task-table-body" class="divide-y divide-slate-100 font-medium text-slate-700">
-                <tr><td colspan="5" class="p-8 text-center text-slate-400">データ読込中...</td></tr>
+                <tr><td colspan="6" class="p-8 text-center text-slate-400">データ読込中...</td></tr>
               </tbody>
             </table>
           </div>
@@ -244,6 +249,8 @@
 
     let currentAuthHeader = sessionStorage.getItem('umi_auth_token') || '';
     let currentAuthType = sessionStorage.getItem('umi_auth_type') || '';
+    let currentUserName = sessionStorage.getItem('umi_user_name') || '';
+    let currentUserAvatar = sessionStorage.getItem('umi_user_avatar') || '';
     let currentView = 'tasks';
     let tasks = [];
     let hotels = [];
@@ -252,7 +259,6 @@
 
     // --- ① 認証処理 & LINE LIFF 安全初期化 ---
     async function initLiff() {
-      // liffオブジェクトが存在しない（ネットワークエラー等）場合は安全にスキップ
       if (typeof liff === 'undefined') {
         console.warn("LINE LIFF SDK が読み込めない環境のため、管理者ログインをご利用ください。");
         return;
@@ -331,18 +337,23 @@
     function setSessionAuth(token, type, name, avatar) {
       currentAuthHeader = token;
       currentAuthType = type;
+      currentUserName = name || '';
+      currentUserAvatar = avatar || '';
+
       sessionStorage.setItem('umi_auth_token', token);
       sessionStorage.setItem('umi_auth_type', type);
+      sessionStorage.setItem('umi_user_name', currentUserName);
+      sessionStorage.setItem('umi_user_avatar', currentUserAvatar);
 
       document.getElementById('auth-overlay').classList.add('hidden');
       document.getElementById('app-root').classList.remove('hidden');
       
-      document.getElementById('user-name').innerText = name;
+      document.getElementById('user-name').innerText = currentUserName;
       document.getElementById('user-role-tag').innerText = type;
 
       const avatarEl = document.getElementById('user-avatar');
-      if (avatar) {
-        avatarEl.src = avatar;
+      if (currentUserAvatar) {
+        avatarEl.src = currentUserAvatar;
         avatarEl.classList.remove('hidden');
       } else {
         avatarEl.classList.add('hidden');
@@ -449,13 +460,14 @@
     function renderTasksTable() {
       const tbody = document.getElementById('task-table-body');
       if (tasks.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">タスクが登録されていません</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">タスクが登録されていません</td></tr>`;
         return;
       }
       tbody.innerHTML = tasks.map(t => `
         <tr class="hover:bg-white/50 transition-all">
           <td class="p-3.5 font-bold text-slate-800">${t.title}</td>
           <td class="p-3.5"><span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 font-bold text-[11px]">${t.team}</span></td>
+          <td class="p-3.5 text-slate-500 max-w-xs truncate">${t.description || '-'}</td>
           <td class="p-3.5 font-semibold ${t.due !== '未定' && new Date(t.due) < new Date() ? 'text-rose-500 font-bold' : ''}">${t.due}</td>
           <td class="p-3.5">${getStatusBadge(t.status)}</td>
           <td class="p-3.5 text-right space-x-1">
@@ -581,7 +593,7 @@
       editingItemId = id;
       const item = type === 'tasks' ? tasks.find(t => t.id === id) : hotels.find(h => h.id === id);
       document.getElementById('modal-title').innerText = type === 'tasks' ? 'タスク編集' : '交渉先編集';
-      renderFormFields(item);
+      renderFormFields(item || {});
       document.getElementById('item-modal').classList.remove('hidden');
       if (typeof lucide !== 'undefined') lucide.createIcons();
     }
@@ -596,6 +608,7 @@
         container.innerHTML = `
           <div><label class="font-bold text-slate-600">タスク名</label><input type="text" id="field-title" value="${data.title || ''}" required class="w-full mt-1 p-2 border rounded-lg"></div>
           <div><label class="font-bold text-slate-600">担当チーム</label><input type="text" id="field-team" value="${data.team || 'デザイン班'}" required class="w-full mt-1 p-2 border rounded-lg"></div>
+          <div><label class="font-bold text-slate-600">詳細 / 説明</label><textarea id="field-description" class="w-full mt-1 p-2 border rounded-lg" rows="3">${data.description || ''}</textarea></div>
           <div><label class="font-bold text-slate-600">期限</label><input type="date" id="field-due" value="${data.due || ''}" class="w-full mt-1 p-2 border rounded-lg"></div>
           <div><label class="font-bold text-slate-600">ステータス</label>
             <select id="field-status" class="w-full mt-1 p-2 border rounded-lg">
@@ -618,7 +631,7 @@
           </div>
           <div><label class="font-bold text-slate-600">設置場所</label><input type="text" id="field-location" value="${data.location || ''}" class="w-full mt-1 p-2 border rounded-lg"></div>
           <div><label class="font-bold text-slate-600">資材</label><input type="text" id="field-material" value="${data.material || ''}" class="w-full mt-1 p-2 border rounded-lg"></div>
-          <div><label class="font-bold text-slate-600">メモ</label><textarea id="field-memo" class="w-full mt-1 p-2 border rounded-lg">${data.memo || ''}</textarea></div>
+          <div><label class="font-bold text-slate-600">メモ</label><textarea id="field-memo" class="w-full mt-1 p-2 border rounded-lg" rows="3">${data.memo || ''}</textarea></div>
         `;
       }
     }
@@ -633,6 +646,7 @@
         payload = {
           title: document.getElementById('field-title').value,
           team: document.getElementById('field-team').value,
+          description: document.getElementById('field-description').value,
           due: document.getElementById('field-due').value || '未定',
           status: document.getElementById('field-status').value
         };
@@ -675,21 +689,14 @@
       if (currentAuthHeader) {
         try {
           await fetchDashboardData();
-          setSessionAuth(
-            currentAuthHeader, 
-            currentAuthType, 
-            currentAuthType === 'ADMIN' ? '管理者' : 'LINEユーザー', 
-            null
-          );
-        } catch (e) {
+          setSessionAuth(currentAuthHeader, currentAuthType, currentUserName, currentUserAvatar);
+        } catch (err) {
           sessionStorage.clear();
+          document.getElementById('auth-overlay').classList.remove('hidden');
         }
-      }
-
-      // 安全にLIFF初期化を実行
-      setTimeout(() => {
+      } else {
         initLiff();
-      }, 300);
+      }
     });
   </script>
 </body>
