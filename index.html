@@ -3,364 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>海のサインプロジェクト - タスク・交渉記録ダッシュボード</title>
+    <title>海のサインプロジェクト - 管理ダッシュボード</title>
 
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS CDN (※開発・プレビュー用) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        ocean: {
+                        brand: {
                             50: '#f0f9ff',
                             100: '#e0f2fe',
                             500: '#0284c7',
-                            600: '#0284c7',
-                            800: '#075985',
+                            600: '#0369a1',
+                            700: '#075985',
                             900: '#0c4a6e',
-                            950: '#082f49'
                         }
                     }
                 }
             }
         }
     </script>
-
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
     <!-- LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
-    <!-- Google Identity Services (GIS) -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-
     <style>
         body {
-            background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #f0f5ff 100%);
-            color: #1e293b;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* 💎 クリスタル・ガラスモフィズム（ホワイトテーマ版） */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-        }
-
-        .glass-input {
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(203, 213, 225, 0.6);
+            background-color: #f8fafc;
             color: #0f172a;
-        }
-
-        .glass-input:focus {
-            outline: none;
-            border-color: #0284c7;
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
-            background: rgba(255, 255, 255, 0.95);
-        }
-
-        /* 🪐 浮遊するクリスタル＆図形アニメーション (Keyframes) */
-        .bg-shapes {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            pointer-events: none;
-            overflow: hidden;
-        }
-
-        .crystal-shape {
-            position: absolute;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(56, 189, 248, 0.25));
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(8px);
-            box-shadow: 0 8px 24px 0 rgba(14, 165, 233, 0.12);
-            animation: float 14s infinite ease-in-out;
-        }
-
-        /* 個別図形スタイル & アニメーション遅延 */
-        .shape-1 {
-            top: 10%; left: 8%;
-            width: 120px; height: 120px;
-            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
-            animation-duration: 16s;
-        }
-
-        .shape-2 {
-            top: 60%; left: 85%;
-            width: 180px; height: 180px;
-            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
-            animation-duration: 20s;
-            animation-delay: -3s;
-        }
-
-        .shape-3 {
-            top: 75%; left: 12%;
-            width: 90px; height: 90px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(129, 140, 248, 0.3));
-            animation-duration: 12s;
-            animation-delay: -5s;
-        }
-
-        .shape-4 {
-            top: 18%; left: 78%;
-            width: 100px; height: 100px;
-            transform: rotate(45deg);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(6, 182, 212, 0.25));
-            animation-duration: 18s;
-            animation-delay: -2s;
-        }
-
-        .shape-5 {
-            top: 45%; left: 48%;
-            width: 70px; height: 70px;
-            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-            animation-duration: 15s;
-            animation-delay: -7s;
-        }
-
-        @keyframes float {
-            0% {
-                transform: translateY(0px) rotate(0deg) scale(1);
-            }
-            50% {
-                transform: translateY(-25px) rotate(10deg) scale(1.05);
-            }
-            100% {
-                transform: translateY(0px) rotate(0deg) scale(1);
-            }
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
 
-    <!-- 💎 浮遊クリスタル背景エレメント -->
-    <div class="bg-shapes">
-        <div class="crystal-shape shape-1"></div>
-        <div class="crystal-shape shape-2"></div>
-        <div class="crystal-shape shape-3"></div>
-        <div class="crystal-shape shape-4"></div>
-        <div class="crystal-shape shape-5"></div>
-    </div>
-
-    <!-- 🌐 HEADER / NAVIGATION -->
-    <header class="sticky top-0 z-40 glass-panel border-b border-white/60">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-ocean-500 to-cyan-400 flex items-center justify-center shadow-md shadow-ocean-500/20">
-                    <i data-lucide="waves" class="w-5 h-5 text-white"></i>
+    <!-- 🌐 HEADER -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3 shrink-0">
+                <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white shadow-sm">
+                    <i data-lucide="waves" class="w-5 h-5"></i>
                 </div>
-                <span class="font-bold text-lg tracking-wide text-slate-800">海のサインプロジェクト</span>
+                <span class="font-bold text-base sm:text-lg text-slate-800 tracking-tight leading-tight truncate">
+                    海のサイン<span class="hidden sm:inline">プロジェクト</span>
+                </span>
             </div>
 
-            <!-- User Auth Bar -->
-            <div class="flex items-center space-x-4">
-                <div class="flex items-center space-x-3 bg-white/80 px-3 py-1.5 rounded-full border border-slate-200/80 shadow-sm">
-                    <img id="userAvatar" src="https://placehold.co/100x100/0284c7/ffffff?text=User" alt="Avatar" class="w-7 h-7 rounded-full object-cover border border-slate-300">
-                    <div class="text-xs">
-                        <div id="userName" class="font-semibold text-slate-700">未ログイン</div>
-                        <div id="roleBadge" class="text-[10px] text-slate-500">GUEST</div>
+            <!-- User Auth Profile -->
+            <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
+                <div class="flex items-center space-x-2 bg-slate-100 px-2.5 py-1.5 rounded-full border border-slate-200">
+                    <img id="userAvatar" src="https://placehold.co/80x80/0284c7/ffffff?text=U" alt="Avatar" class="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover">
+                    <div class="text-left">
+                        <div id="userName" class="text-xs font-semibold text-slate-700 max-w-[80px] sm:max-w-[120px] truncate">ゲスト</div>
                     </div>
+                    <span id="roleBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 uppercase">GUEST</span>
                 </div>
 
-                <button id="authBtn" onclick="openLoginModal()" class="px-3.5 py-1.5 rounded-lg bg-ocean-500 hover:bg-ocean-600 text-white text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-md shadow-ocean-500/20">
-                    <i data-lucide="log-in" class="w-4 h-4"></i>
-                    <span>ログイン</span>
+                <button id="authBtn" onclick="openLoginModal()" class="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium flex items-center space-x-1.5 transition shadow-sm">
+                    <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">ログイン</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- 📊 MAIN DASHBOARD CONTAINER -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+    <!-- 📊 MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
 
         <!-- Status Overview Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="glass-panel p-5 rounded-2xl flex items-center justify-between">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">認証ステータス</p>
-                    <p id="authSource" class="text-sm font-semibold text-emerald-600 mt-1 flex items-center gap-1.5">
-                        <span class="inline-block w-2 h-2 rounded-full bg-slate-400"></span> 認証なし
+                    <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">認証ステータス</p>
+                    <p id="authSource" class="text-xs sm:text-sm font-semibold text-slate-600 mt-0.5 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-slate-400 inline-block"></span> 未認証
                     </p>
                 </div>
-                <div class="p-3 bg-cyan-50/80 rounded-xl text-ocean-600 border border-cyan-100">
-                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                <div class="p-2.5 bg-slate-50 text-slate-500 rounded-lg border border-slate-100">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
                 </div>
             </div>
 
-            <div class="glass-panel p-5 rounded-2xl flex items-center justify-between">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">アクセス権限</p>
-                    <p id="statRoleText" class="text-sm font-semibold text-slate-700 mt-1">一般ユーザー</p>
+                    <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">アクセス権限</p>
+                    <p id="statRoleText" class="text-xs sm:text-sm font-semibold text-slate-700 mt-0.5">一般ユーザー</p>
                 </div>
-                <div class="p-3 bg-amber-50/80 rounded-xl text-amber-500 border border-amber-100">
-                    <i data-lucide="key-round" class="w-6 h-6"></i>
+                <div class="p-2.5 bg-slate-50 text-slate-500 rounded-lg border border-slate-100">
+                    <i data-lucide="key-round" class="w-5 h-5"></i>
                 </div>
             </div>
 
-            <div class="glass-panel p-5 rounded-2xl flex items-center justify-between">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">DB 接続状態</p>
-                    <p id="apiStatusText" class="text-sm font-semibold text-sky-600 mt-1">Cloudflare D1 接続準備完了</p>
+                    <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">DB 接続状態</p>
+                    <p id="apiStatusText" class="text-xs sm:text-sm font-semibold text-slate-700 mt-0.5">ローカルキャッシュ動作中</p>
                 </div>
-                <div class="p-3 bg-sky-50/80 rounded-xl text-sky-500 border border-sky-100">
-                    <i data-lucide="database" class="w-6 h-6"></i>
+                <div class="p-2.5 bg-slate-50 text-slate-500 rounded-lg border border-slate-100">
+                    <i data-lucide="database" class="w-5 h-5"></i>
                 </div>
             </div>
         </div>
 
-        <!-- Data Section Header & Controls -->
-        <div class="glass-panel rounded-2xl p-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <!-- Controls & Data Section -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <!-- Navigation Tabs -->
-                <div class="flex bg-slate-200/60 p-1 rounded-xl border border-slate-300/50">
-                    <button id="tabTasksBtn" onclick="switchDataTab('tasks')" class="px-4 py-2 rounded-lg text-xs font-semibold transition-all bg-ocean-500 text-white shadow-md">
+                <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200 self-start sm:self-auto">
+                    <button id="tabTasksBtn" onclick="switchDataTab('tasks')" class="px-3 sm:px-4 py-1.5 rounded-md text-xs font-semibold bg-white text-brand-600 shadow-sm transition">
                         タスク管理
                     </button>
-                    <button id="tabHotelsBtn" onclick="switchDataTab('hotels')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all">
+                    <button id="tabHotelsBtn" onclick="switchDataTab('hotels')" class="px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition">
                         ホテル一覧
                     </button>
-                    <button id="tabLogsBtn" onclick="switchDataTab('logs')" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all">
+                    <button id="tabLogsBtn" onclick="switchDataTab('logs')" class="px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition">
                         操作ログ
                     </button>
                 </div>
 
-                <!-- Action Button -->
-                <button id="addItemBtn" onclick="openCreateModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-ocean-500 to-cyan-500 hover:from-ocean-600 hover:to-cyan-600 text-white text-xs font-semibold flex items-center justify-center space-x-2 transition-all shadow-lg shadow-ocean-500/20">
+                <!-- Add Button -->
+                <button id="addItemBtn" onclick="openCreateModal()" class="w-full sm:w-auto px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-sm">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     <span id="addItemBtnText">新規タスク追加</span>
                 </button>
             </div>
 
-            <!-- TAB 1: Tasks Table -->
-            <div id="tasksTable" class="overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                        <tr class="border-b border-slate-200 text-slate-500">
-                            <th class="py-3 px-4">タスク名</th>
-                            <th class="py-3 px-4">担当チーム</th>
-                            <th class="py-3 px-4">期限</th>
-                            <th class="py-3 px-4">ステータス</th>
-                            <th class="py-3 px-4 text-right">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tasksBody" class="divide-y divide-slate-200/70 text-slate-700"></tbody>
-                </table>
-            </div>
-
-            <!-- TAB 2: Hotels Table -->
-            <div id="hotelsTable" class="overflow-x-auto hidden">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                        <tr class="border-b border-slate-200 text-slate-500">
-                            <th class="py-3 px-4">施設名</th>
-                            <th class="py-3 px-4">エリア</th>
-                            <th class="py-3 px-4">ステータス</th>
-                            <th class="py-3 px-4 text-right">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="hotelsBody" class="divide-y divide-slate-200/70 text-slate-700"></tbody>
-                </table>
-            </div>
-
-            <!-- TAB 3: System Logs Table -->
-            <div id="logsTable" class="overflow-x-auto hidden">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                        <tr class="border-b border-slate-200 text-slate-500">
-                            <th class="py-3 px-4">タイムスタンプ</th>
-                            <th class="py-3 px-4">ユーザー</th>
-                            <th class="py-3 px-4">操作内容</th>
-                        </tr>
-                    </thead>
-                    <tbody id="logsBody" class="divide-y divide-slate-200/70 text-slate-700"></tbody>
-                </table>
+            <!-- DATA CONTAINER (Responsive View) -->
+            <div id="dataContainer">
+                <!-- Dynamic Content Will Be Injected Here -->
             </div>
         </div>
     </main>
 
     <!-- 🔐 LOGIN MODAL -->
-    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md hidden">
-        <div class="glass-panel w-full max-w-md rounded-2xl p-6 border border-white/80 shadow-2xl relative">
-            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
+    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm hidden">
+        <div class="bg-white w-full max-w-sm rounded-xl p-6 border border-slate-200 shadow-xl relative">
+            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
 
-            <h3 class="text-lg font-bold text-slate-800 mb-2">システムログイン</h3>
-            <p class="text-xs text-slate-500 mb-6">利用する認証連携サービスを選択してください。</p>
+            <h3 class="text-base font-bold text-slate-800 mb-1">システムログイン</h3>
+            <p class="text-xs text-slate-500 mb-5">ご利用のアカウントを選択してください。</p>
 
-            <div class="grid grid-cols-3 gap-2 mb-6 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
-                <button id="authTabLine" onclick="switchAuthTab('line')" class="py-2 rounded-lg text-slate-700 bg-white shadow-sm font-semibold">LINE</button>
-                <button id="authTabGoogle" onclick="switchAuthTab('google')" class="py-2 rounded-lg text-slate-500 hover:text-slate-800">Google</button>
-                <button id="authTabAdmin" onclick="switchAuthTab('admin')" class="py-2 rounded-lg text-slate-500 hover:text-slate-800">管理者</button>
-            </div>
-
-            <div id="authContentLine" class="space-y-4">
-                <p class="text-xs text-slate-600">LINE アカウントを利用してログインします。</p>
-                <button onclick="loginWithLine()" class="w-full py-3 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs flex items-center justify-center space-x-2 transition-all shadow-md">
+            <div class="space-y-3">
+                <button onclick="loginWithLine()" class="w-full py-2.5 rounded-lg bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs flex items-center justify-center space-x-2 transition shadow-sm">
                     <i data-lucide="message-square" class="w-4 h-4"></i>
                     <span>LINEでログイン</span>
                 </button>
-            </div>
 
-            <div id="authContentGoogle" class="space-y-4 hidden">
-                <p class="text-xs text-slate-600">Google アカウントでログインします。</p>
-                <div id="g_id_onload"
-                    data-client_id="988378587809-g9calu17mv9huuidppdjj74ibimuo7vb.apps.googleusercontent.com"
-                    data-callback="handleGoogleCallback">
+                <div class="pt-2 border-t border-slate-100">
+                    <p class="text-[11px] text-slate-500 mb-2">管理者用パスコード</p>
+                    <div class="flex gap-2">
+                        <input type="password" id="adminPasscodeInput" placeholder="パスコード" class="flex-1 p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <button onclick="loginWithAdminPasscode()" class="px-3 py-2 bg-slate-800 text-white text-xs font-semibold rounded-lg hover:bg-slate-900 transition">
+                            認証
+                        </button>
+                    </div>
                 </div>
-                <div class="g_id_signin w-full flex justify-center" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="signin_with" data-size="large"></div>
-            </div>
-
-            <div id="authContentAdmin" class="space-y-4 hidden">
-                <p class="text-xs text-slate-600">管理者パスコードを入力して認証を行います。</p>
-                <input type="password" id="adminPasscodeInput" placeholder="パスコードを入力" class="w-full p-2.5 rounded-xl glass-input text-sm">
-                <button onclick="loginWithAdminPasscode()" class="w-full py-2.5 rounded-xl bg-ocean-500 hover:bg-ocean-600 text-white font-bold text-xs transition-all shadow-md">
-                    管理者認証
-                </button>
             </div>
         </div>
     </div>
 
-    <!-- 🔑 PASSCODE BIND MODAL -->
-    <div id="bindModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md hidden">
-        <div class="glass-panel w-full max-w-sm rounded-2xl p-6 border border-white/80 shadow-2xl relative">
-            <button onclick="closeBindModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
+    <!-- 📝 CRUD MODAL -->
+    <div id="dataModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm hidden">
+        <div class="bg-white w-full max-w-md rounded-xl p-6 border border-slate-200 shadow-xl relative">
+            <button onclick="closeDataModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
 
-            <h3 class="text-lg font-bold text-slate-800 mb-2">アカウントの紐付け</h3>
-            <p class="text-xs text-slate-500 mb-4">初回ログインのため、発行されたパスコードを入力してください。</p>
-
-            <div class="space-y-4">
-                <input type="password" id="bindPasscodeInput" placeholder="紐付け用パスコード" class="w-full p-2.5 rounded-xl glass-input text-sm">
-                <button onclick="executePasscodeBind()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition-all shadow-md">
-                    紐付けを実行
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 📝 CRUD DATA MODAL -->
-    <div id="dataModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md hidden">
-        <div class="glass-panel w-full max-w-md rounded-2xl p-6 border border-white/80 shadow-2xl relative">
-            <button onclick="closeDataModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-
-            <h3 id="modalFormTitle" class="text-lg font-bold text-slate-800 mb-4">データ作成</h3>
+            <h3 id="modalFormTitle" class="text-base font-bold text-slate-800 mb-4">データ編集</h3>
 
             <form id="dataForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
                 <input type="hidden" id="formItemType">
@@ -368,12 +183,12 @@
 
                 <div id="formFieldsContainer" class="space-y-3"></div>
 
-                <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200">
-                    <button type="button" onclick="closeDataModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 text-xs hover:bg-slate-100">
+                <div class="flex items-center justify-end space-x-2 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeDataModal()" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-600 text-xs hover:bg-slate-50">
                         キャンセル
                     </button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-ocean-500 hover:bg-ocean-600 text-white text-xs font-bold shadow-md">
-                        保存する
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm">
+                        保存
                     </button>
                 </div>
             </form>
@@ -381,13 +196,13 @@
     </div>
 
     <!-- 📄 FOOTER -->
-    <footer class="glass-panel border-t border-white/60 py-4 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
-            &copy; 海のサインプロジェクト Dashboard System (Cloudflare D1 Stack). All rights reserved.
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
+            &copy; 海のサインプロジェクト Dashboard System
         </div>
     </footer>
 
-    <!-- 📜 JAVASCRIPT APP LOGIC -->
+    <!-- 📜 JS APPLICATION LOGIC -->
     <script>
         const API_BASE = "https://uminosign.zinn1019t.workers.dev";
         const LIFF_ID = "2011830749-oBGQ72bz";
@@ -395,8 +210,7 @@
         let currentState = {
             user: null,
             authType: 'guest',
-            authHeaderToken: '',
-            pendingAuthPayload: null,
+            token: '',
             activeTab: 'tasks',
             tasks: [
                 { id: '1', title: '看板設置の現地調査・安全確認', team: '設置技術チーム', due: '2026-10-15', status: '進行中' },
@@ -409,8 +223,7 @@
                 { id: '3', name: 'オーシャンビューホテル名護', location: '名護エリア', status: '未交渉' }
             ],
             logs: [
-                { time: '2026-10-05 10:14', user: '管理者 (Admin)', action: '新規タスク『現地調査』を更新' },
-                { time: '2026-10-05 09:30', user: 'ゲストユーザー', action: 'ダッシュボードを閲覧' }
+                { time: '2026-10-05 10:14', user: '管理者', action: 'タスク更新' }
             ]
         };
 
@@ -422,7 +235,7 @@
         });
 
         function initLiff() {
-            if (typeof liff !== 'undefined' && LIFF_ID !== "YOUR_LIFF_ID") {
+            if (typeof liff !== 'undefined' && LIFF_ID && LIFF_ID !== "YOUR_LIFF_ID") {
                 liff.init({ liffId: LIFF_ID }).catch(err => console.error("LIFF Init failed:", err));
             }
         }
@@ -434,7 +247,7 @@
                     const parsed = JSON.parse(stored);
                     currentState.user = parsed.user;
                     currentState.authType = parsed.authType;
-                    currentState.authHeaderToken = parsed.token;
+                    currentState.token = parsed.token || '';
                     updateUserUI();
                 } catch (e) {
                     localStorage.removeItem('uminosign_auth');
@@ -442,234 +255,211 @@
             }
         }
 
-        async function loginWithLine() {
-            if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                const profile = await liff.getProfile();
-                const idToken = liff.getIDToken();
-                await processAuthResult(`LINE:${idToken}`, {
-                    lineUserId: profile.userId,
-                    name: profile.displayName,
-                    linePic: profile.pictureUrl
-                });
-            } else if (typeof liff !== 'undefined' && LIFF_ID !== "YOUR_LIFF_ID") {
-                liff.login();
-            } else {
-                alert("LIFF IDを設定するか、LINEアプリ内で起動してください。");
-            }
-        }
-
-        function handleGoogleCallback(response) {
-            const credential = response.credential;
-            const payload = parseJwtPayload(credential);
-            processAuthResult(`GOOGLE:${credential}`, {
-                googleEmail: payload.email,
-                name: payload.name,
-                googlePic: payload.picture
-            });
-        }
-
-        function parseJwtPayload(token) {
-            try {
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                return JSON.parse(decodeURIComponent(atob(base64).split('').map(c => {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join('')));
-            } catch (e) {
-                return {};
-            }
-        }
-
-        function loginWithAdminPasscode() {
-            const passcode = document.getElementById('adminPasscodeInput').value.trim();
-            if (!passcode) return alert("パスコードを入力してください。");
-            processAuthResult(`ADMIN:${passcode}`, { passcode });
-        }
-
-        async function processAuthResult(authHeaderToken, payloadData) {
-            try {
-                const res = await fetch(`${API_BASE}/api/auth/verify`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authHeaderToken}`
-                    },
-                    body: JSON.stringify(payloadData)
-                });
-
-                if (!res.ok) throw new Error("認証に失敗しました");
-                const data = await res.json();
-
-                if (data.status === 'NEED_BINDING') {
-                    currentState.pendingAuthPayload = { authHeaderToken, payloadData };
-                    closeLoginModal();
-                    openBindModal();
-                    return;
-                }
-
-                setSession(data.user, data.authType, authHeaderToken);
-                closeLoginModal();
-                fetchDashboardData();
-            } catch (err) {
-                // デモ用代替処理
-                const mockUser = {
-                    name: payloadData.name || '管理者ユーザー',
-                    avatar: payloadData.googlePic || payloadData.linePic || 'https://placehold.co/100x100/0284c7/ffffff?text=User',
-                    role: 'ADMIN'
-                };
-                setSession(mockUser, payloadData.passcode ? 'admin' : 'sso', authHeaderToken);
-                closeLoginModal();
-            }
-        }
-
-        function setSession(user, authType, token) {
-            currentState.user = user;
-            currentState.authType = authType;
-            currentState.authHeaderToken = token;
-
-            localStorage.setItem('uminosign_auth', JSON.stringify({ user, authType, token }));
-            updateUserUI();
-        }
-
-        function updateUserUI() {
-            const user = currentState.user;
-            if (!user) return;
-
-            document.getElementById('userName').innerText = user.name;
-            document.getElementById('userAvatar').src = user.avatar;
-            document.getElementById('roleBadge').innerText = user.role;
-            document.getElementById('statRoleText').innerText = user.role === 'ADMIN' ? '管理者権限' : '一般ユーザー';
-
-            const authSourceEl = document.getElementById('authSource');
-            authSourceEl.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span> ${currentState.authType.toUpperCase()} 認証済み`;
-
-            const authBtn = document.getElementById('authBtn');
-            authBtn.innerHTML = `<i data-lucide="log-out" class="w-4 h-4"></i> <span>ログアウト</span>`;
-            authBtn.onclick = logout;
-            lucide.createIcons();
-        }
-
-        function logout() {
-            currentState.user = null;
-            currentState.authType = 'guest';
-            currentState.authHeaderToken = '';
-            localStorage.removeItem('uminosign_auth');
-
-            document.getElementById('userName').innerText = '未ログイン';
-            document.getElementById('userAvatar').src = 'https://placehold.co/100x100/0284c7/ffffff?text=User';
-            document.getElementById('roleBadge').innerText = 'GUEST';
-            document.getElementById('statRoleText').innerText = '一般ユーザー';
-            document.getElementById('authSource').innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-slate-400"></span> 認証なし`;
-
-            const authBtn = document.getElementById('authBtn');
-            authBtn.innerHTML = `<i data-lucide="log-in" class="w-4 h-4"></i> <span>ログイン</span>`;
-            authBtn.onclick = openLoginModal;
-            lucide.createIcons();
-
-            if (window.liff && liff.isLoggedIn()) liff.logout();
-            fetchDashboardData();
-        }
-
-        async function executePasscodeBind() {
-            const passcode = document.getElementById('bindPasscodeInput').value.trim();
-            if (!passcode) return alert("パスコードを入力してください。");
-
-            if (currentState.pendingAuthPayload) {
-                const { authHeaderToken, payloadData } = currentState.pendingAuthPayload;
-                payloadData.passcode = passcode;
-                currentState.pendingAuthPayload = null;
-                closeBindModal();
-                await processAuthResult(authHeaderToken, payloadData);
-            }
-        }
-
         async function fetchDashboardData() {
+            // トークンが無い場合は401エラーを防ぐためヘッダーを送信しない
+            const headers = {};
+            if (currentState.token) {
+                headers['Authorization'] = `Bearer ${currentState.token}`;
+            }
+
             try {
-                const res = await fetch(`${API_BASE}/api/dashboard`, {
-                    headers: { 'Authorization': `Bearer ${currentState.authHeaderToken}` }
-                });
+                const res = await fetch(`${API_BASE}/api/dashboard`, { headers });
                 if (res.ok) {
                     const data = await res.json();
                     if (data.tasks) currentState.tasks = data.tasks;
                     if (data.hotels) currentState.hotels = data.hotels;
                     if (data.logs) currentState.logs = data.logs;
-                    document.getElementById('apiStatusText').innerText = "Cloudflare D1 接続中 (高速)";
+                    document.getElementById('apiStatusText').innerText = "Cloudflare D1 接続中";
                 } else {
-                    document.getElementById('apiStatusText').innerText = "ローカルメモリ・キャッシュで動作中";
+                    document.getElementById('apiStatusText').innerText = "ローカルメモリ動作中";
                 }
             } catch (err) {
-                document.getElementById('apiStatusText').innerText = "スタンドアロンモード (D1未接続)";
+                document.getElementById('apiStatusText').innerText = "スタンドアロン動作中";
             }
             renderDashboardData();
         }
 
         function renderDashboardData() {
-            // Render Tasks
-            const tasksBody = document.getElementById('tasksBody');
-            tasksBody.innerHTML = currentState.tasks.map(t => `
-                <tr class="hover:bg-sky-50/50 transition-colors">
-                    <td class="py-3 px-4 font-medium text-slate-800">${escapeHtml(t.title)}</td>
-                    <td class="py-3 px-4 text-slate-600">${escapeHtml(t.team)}</td>
-                    <td class="py-3 px-4 text-slate-500">${escapeHtml(t.due)}</td>
-                    <td class="py-3 px-4">
-                        <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold ${getStatusBadgeClass(t.status)}">
-                            ${escapeHtml(t.status)}
-                        </span>
-                    </td>
-                    <td class="py-3 px-4 text-right space-x-2">
-                        <button onclick="openEditModal('tasks', '${t.id}', '${escapeHtml(t.title)}', '${escapeHtml(t.team)}', '${escapeHtml(t.due)}', '${escapeHtml(t.status)}')" class="text-slate-400 hover:text-sky-600">
-                            <i data-lucide="edit-3" class="w-4 h-4 inline"></i>
-                        </button>
-                        <button onclick="deleteItem('tasks', '${t.id}')" class="text-slate-400 hover:text-rose-600">
-                            <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('') || `<tr><td colspan="5" class="py-6 text-center text-slate-400">タスクはありません</td></tr>`;
+            const container = document.getElementById('dataContainer');
+            const tab = currentState.activeTab;
 
-            // Render Hotels
-            const hotelsBody = document.getElementById('hotelsBody');
-            hotelsBody.innerHTML = currentState.hotels.map(h => `
-                <tr class="hover:bg-sky-50/50 transition-colors">
-                    <td class="py-3 px-4 font-medium text-slate-800">${escapeHtml(h.name)}</td>
-                    <td class="py-3 px-4 text-slate-600">${escapeHtml(h.location)}</td>
-                    <td class="py-3 px-4">
-                        <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold ${getStatusBadgeClass(h.status)}">
-                            ${escapeHtml(h.status)}
-                        </span>
-                    </td>
-                    <td class="py-3 px-4 text-right space-x-2">
-                        <button onclick="openEditModal('hotels', '${h.id}', '${escapeHtml(h.name)}', '${escapeHtml(h.location)}', '${escapeHtml(h.status)}')" class="text-slate-400 hover:text-sky-600">
-                            <i data-lucide="edit-3" class="w-4 h-4 inline"></i>
-                        </button>
-                        <button onclick="deleteItem('hotels', '${h.id}')" class="text-slate-400 hover:text-rose-600">
-                            <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('') || `<tr><td colspan="4" class="py-6 text-center text-slate-400">ホテルデータはありません</td></tr>`;
-
-            // Render Logs
-            const logsBody = document.getElementById('logsBody');
-            logsBody.innerHTML = currentState.logs.map(l => `
-                <tr class="hover:bg-sky-50/50 transition-colors">
-                    <td class="py-3 px-4 text-slate-500 font-mono">${escapeHtml(l.time)}</td>
-                    <td class="py-3 px-4 font-medium text-slate-700">${escapeHtml(l.user)}</td>
-                    <td class="py-3 px-4 text-slate-600">${escapeHtml(l.action)}</td>
-                </tr>
-            `).join('') || `<tr><td colspan="3" class="py-6 text-center text-slate-400">ログはありません</td></tr>`;
-
+            if (tab === 'tasks') {
+                renderTasksView(container);
+            } else if (tab === 'hotels') {
+                renderHotelsView(container);
+            } else if (tab === 'logs') {
+                renderLogsView(container);
+            }
             lucide.createIcons();
+        }
+
+        /* 📱 Mobile Responsive View Renderers */
+        function renderTasksView(container) {
+            if (currentState.tasks.length === 0) {
+                container.innerHTML = `<p class="text-center py-8 text-xs text-slate-400">タスクはありません</p>`;
+                return;
+            }
+
+            // Desktop Table + Mobile Card layout combined via CSS
+            container.innerHTML = `
+                <!-- PC Table -->
+                <div class="hidden md:block overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
+                                <th class="py-3 px-3">タスク名</th>
+                                <th class="py-3 px-3">担当チーム</th>
+                                <th class="py-3 px-3">期限</th>
+                                <th class="py-3 px-3">ステータス</th>
+                                <th class="py-3 px-3 text-right">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-slate-700">
+                            ${currentState.tasks.map(t => `
+                                <tr class="hover:bg-slate-50">
+                                    <td class="py-3 px-3 font-medium text-slate-900">${escapeHtml(t.title)}</td>
+                                    <td class="py-3 px-3 text-slate-500">${escapeHtml(t.team)}</td>
+                                    <td class="py-3 px-3 text-slate-500 font-mono">${escapeHtml(t.due)}</td>
+                                    <td class="py-3 px-3">
+                                        <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold whitespace-nowrap ${getStatusBadgeClass(t.status)}">
+                                            ${escapeHtml(t.status)}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-3 text-right space-x-2">
+                                        <button onclick="openEditModal('tasks', '${t.id}', '${escapeHtml(t.title)}', '${escapeHtml(t.team)}', '${escapeHtml(t.due)}', '${escapeHtml(t.status)}')" class="text-slate-400 hover:text-brand-600">
+                                            <i data-lucide="edit-3" class="w-4 h-4 inline"></i>
+                                        </button>
+                                        <button onclick="deleteItem('tasks', '${t.id}')" class="text-slate-400 hover:text-rose-600">
+                                            <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Cards -->
+                <div class="md:hidden space-y-3">
+                    ${currentState.tasks.map(t => `
+                        <div class="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2">
+                            <div class="flex items-start justify-between gap-2">
+                                <h4 class="text-xs font-bold text-slate-800 leading-snug">${escapeHtml(t.title)}</h4>
+                                <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap shrink-0 ${getStatusBadgeClass(t.status)}">
+                                    ${escapeHtml(t.status)}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                                <span>${escapeHtml(t.team)}</span>
+                                <span class="font-mono">${escapeHtml(t.due)}</span>
+                            </div>
+                            <div class="flex justify-end space-x-3 pt-2 border-t border-slate-200/60 text-xs">
+                                <button onclick="openEditModal('tasks', '${t.id}', '${escapeHtml(t.title)}', '${escapeHtml(t.team)}', '${escapeHtml(t.due)}', '${escapeHtml(t.status)}')" class="text-brand-600 font-medium flex items-center gap-1">
+                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> 編集
+                                </button>
+                                <button onclick="deleteItem('tasks', '${t.id}')" class="text-rose-600 font-medium flex items-center gap-1">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 削除
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderHotelsView(container) {
+            if (currentState.hotels.length === 0) {
+                container.innerHTML = `<p class="text-center py-8 text-xs text-slate-400">ホテルデータはありません</p>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <!-- PC Table -->
+                <div class="hidden md:block overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
+                                <th class="py-3 px-3">施設名</th>
+                                <th class="py-3 px-3">エリア</th>
+                                <th class="py-3 px-3">ステータス</th>
+                                <th class="py-3 px-3 text-right">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-slate-700">
+                            ${currentState.hotels.map(h => `
+                                <tr class="hover:bg-slate-50">
+                                    <td class="py-3 px-3 font-medium text-slate-900">${escapeHtml(h.name)}</td>
+                                    <td class="py-3 px-3 text-slate-500">${escapeHtml(h.location)}</td>
+                                    <td class="py-3 px-3">
+                                        <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold whitespace-nowrap ${getStatusBadgeClass(h.status)}">
+                                            ${escapeHtml(h.status)}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-3 text-right space-x-2">
+                                        <button onclick="openEditModal('hotels', '${h.id}', '${escapeHtml(h.name)}', '${escapeHtml(h.location)}', '${escapeHtml(h.status)}')" class="text-slate-400 hover:text-brand-600">
+                                            <i data-lucide="edit-3" class="w-4 h-4 inline"></i>
+                                        </button>
+                                        <button onclick="deleteItem('hotels', '${h.id}')" class="text-slate-400 hover:text-rose-600">
+                                            <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Cards -->
+                <div class="md:hidden space-y-3">
+                    ${currentState.hotels.map(h => `
+                        <div class="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2">
+                            <div class="flex items-start justify-between gap-2">
+                                <h4 class="text-xs font-bold text-slate-800 leading-snug">${escapeHtml(h.name)}</h4>
+                                <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap shrink-0 ${getStatusBadgeClass(h.status)}">
+                                    ${escapeHtml(h.status)}
+                                </span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 pt-1">
+                                エリア: ${escapeHtml(h.location)}
+                            </div>
+                            <div class="flex justify-end space-x-3 pt-2 border-t border-slate-200/60 text-xs">
+                                <button onclick="openEditModal('hotels', '${h.id}', '${escapeHtml(h.name)}', '${escapeHtml(h.location)}', '${escapeHtml(h.status)}')" class="text-brand-600 font-medium flex items-center gap-1">
+                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> 編集
+                                </button>
+                                <button onclick="deleteItem('hotels', '${h.id}')" class="text-rose-600 font-medium flex items-center gap-1">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 削除
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderLogsView(container) {
+            container.innerHTML = `
+                <div class="space-y-2">
+                    ${currentState.logs.map(l => `
+                        <div class="p-2.5 rounded bg-slate-50 border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-600 gap-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-mono text-slate-400 text-[11px]">${escapeHtml(l.time)}</span>
+                                <span class="font-semibold text-slate-700">${escapeHtml(l.user)}</span>
+                            </div>
+                            <div>${escapeHtml(l.action)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
         }
 
         function getStatusBadgeClass(status) {
             switch (status) {
                 case '完了':
                 case '契約締結':
-                    return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+                    return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
                 case '進行中':
                 case '交渉中':
-                    return 'bg-sky-100 text-sky-700 border border-sky-200';
+                    return 'bg-sky-50 text-sky-700 border border-sky-200';
                 default:
                     return 'bg-slate-100 text-slate-600 border border-slate-200';
             }
@@ -679,13 +469,10 @@
             currentState.activeTab = tab;
             ['tasks', 'hotels', 'logs'].forEach(t => {
                 const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}Btn`);
-                const table = document.getElementById(`${t}Table`);
                 if (t === tab) {
-                    btn.className = "px-4 py-2 rounded-lg text-xs font-semibold transition-all bg-ocean-500 text-white shadow-md";
-                    table.classList.remove('hidden');
+                    btn.className = "px-3 sm:px-4 py-1.5 rounded-md text-xs font-semibold bg-white text-brand-600 shadow-sm transition";
                 } else {
-                    btn.className = "px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all";
-                    table.classList.add('hidden');
+                    btn.className = "px-3 sm:px-4 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition";
                 }
             });
 
@@ -700,38 +487,108 @@
             } else {
                 addBtn.style.display = "none";
             }
+
+            renderDashboardData();
         }
 
-        function switchAuthTab(provider) {
-            ['Line', 'Google', 'Admin'].forEach(p => {
-                const btn = document.getElementById(`authTab${p}`);
-                const content = document.getElementById(`authContent${p}`);
-                if (p.toLowerCase() === provider) {
-                    btn.className = "py-2 rounded-lg text-slate-700 bg-white shadow-sm font-semibold";
-                    content.classList.remove('hidden');
-                } else {
-                    btn.className = "py-2 rounded-lg text-slate-500 hover:text-slate-800";
-                    content.classList.add('hidden');
-                }
-            });
+        /* 🔐 Auth Handling */
+        async function loginWithLine() {
+            if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                const profile = await liff.getProfile();
+                const idToken = liff.getIDToken();
+                await processAuthResult(`LINE:${idToken}`, {
+                    name: profile.displayName,
+                    linePic: profile.pictureUrl
+                });
+            } else if (typeof liff !== 'undefined' && LIFF_ID && LIFF_ID !== "YOUR_LIFF_ID") {
+                liff.login();
+            } else {
+                alert("LIFFの初期化情報が未設定です。");
+            }
         }
 
-        // Modals management
-        function openLoginModal() {
-            document.getElementById('loginModal').classList.remove('hidden');
+        function loginWithAdminPasscode() {
+            const passcode = document.getElementById('adminPasscodeInput').value.trim();
+            if (!passcode) return alert("パスコードを入力してください。");
+            processAuthResult(`ADMIN:${passcode}`, { passcode, name: '管理者' });
         }
 
-        function closeLoginModal() {
-            document.getElementById('loginModal').classList.add('hidden');
+        async function processAuthResult(authToken, payloadData) {
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(payloadData)
+                });
+
+                if (!res.ok) throw new Error("認証失敗");
+                const data = await res.json();
+                setSession(data.user, data.authType, authToken);
+            } catch (err) {
+                // デモ用ローカルログイン処理
+                const mockUser = {
+                    name: payloadData.name || '管理者',
+                    avatar: payloadData.linePic || 'https://placehold.co/80x80/0284c7/ffffff?text=A',
+                    role: 'ADMIN'
+                };
+                setSession(mockUser, 'admin', authToken);
+            }
+            closeLoginModal();
+            fetchDashboardData();
         }
 
-        function openBindModal() {
-            document.getElementById('bindModal').classList.remove('hidden');
+        function setSession(user, authType, token) {
+            currentState.user = user;
+            currentState.authType = authType;
+            currentState.token = token;
+            localStorage.setItem('uminosign_auth', JSON.stringify({ user, authType, token }));
+            updateUserUI();
         }
 
-        function closeBindModal() {
-            document.getElementById('bindModal').classList.add('hidden');
+        function updateUserUI() {
+            const user = currentState.user;
+            if (!user) return;
+
+            document.getElementById('userName').innerText = user.name;
+            document.getElementById('userAvatar').src = user.avatar;
+            document.getElementById('roleBadge').innerText = user.role;
+            document.getElementById('statRoleText').innerText = user.role === 'ADMIN' ? '管理者権限' : '一般権限';
+            document.getElementById('authSource').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> 認証済み`;
+
+            const authBtn = document.getElementById('authBtn');
+            authBtn.innerHTML = `<i data-lucide="log-out" class="w-3.5 h-3.5"></i><span class="hidden sm:inline">ログアウト</span>`;
+            authBtn.onclick = logout;
+            lucide.createIcons();
         }
+
+        function logout() {
+            currentState.user = null;
+            currentState.authType = 'guest';
+            currentState.token = '';
+            localStorage.removeItem('uminosign_auth');
+
+            document.getElementById('userName').innerText = 'ゲスト';
+            document.getElementById('userAvatar').src = 'https://placehold.co/80x80/0284c7/ffffff?text=U';
+            document.getElementById('roleBadge').innerText = 'GUEST';
+            document.getElementById('statRoleText').innerText = '一般ユーザー';
+            document.getElementById('authSource').innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400 inline-block"></span> 未認証`;
+
+            const authBtn = document.getElementById('authBtn');
+            authBtn.innerHTML = `<i data-lucide="log-in" class="w-3.5 h-3.5"></i><span class="hidden sm:inline">ログイン</span>`;
+            authBtn.onclick = openLoginModal;
+            lucide.createIcons();
+
+            if (window.liff && liff.isLoggedIn()) liff.logout();
+            fetchDashboardData();
+        }
+
+        /* 📝 Modals and Form Actions */
+        function openLoginModal() { document.getElementById('loginModal').classList.remove('hidden'); }
+        function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); }
+        function closeDataModal() { document.getElementById('dataModal').classList.add('hidden'); }
 
         function openCreateModal() {
             const type = currentState.activeTab;
@@ -743,20 +600,20 @@
             if (type === 'tasks') {
                 container.innerHTML = `
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">タスク名</label>
-                        <input type="text" id="fieldTitle" required class="w-full p-2.5 rounded-xl glass-input text-xs" placeholder="例: 看板設置の確認">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">タスク名</label>
+                        <input type="text" id="fieldTitle" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">担当チーム</label>
-                        <input type="text" id="fieldTeam" required class="w-full p-2.5 rounded-xl glass-input text-xs" placeholder="例: 技術チーム">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">担当チーム</label>
+                        <input type="text" id="fieldTeam" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">期限</label>
-                        <input type="date" id="fieldDue" required class="w-full p-2.5 rounded-xl glass-input text-xs">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">期限</label>
+                        <input type="date" id="fieldDue" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">ステータス</label>
-                        <select id="fieldStatus" class="w-full p-2.5 rounded-xl glass-input text-xs">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">ステータス</label>
+                        <select id="fieldStatus" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                             <option value="未着手">未着手</option>
                             <option value="進行中">進行中</option>
                             <option value="完了">完了</option>
@@ -766,16 +623,16 @@
             } else {
                 container.innerHTML = `
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">施設名</label>
-                        <input type="text" id="fieldName" required class="w-full p-2.5 rounded-xl glass-input text-xs" placeholder="例: グランドホテル">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">施設名</label>
+                        <input type="text" id="fieldName" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">エリア</label>
-                        <input type="text" id="fieldLocation" required class="w-full p-2.5 rounded-xl glass-input text-xs" placeholder="例: 那覇エリア">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">エリア</label>
+                        <input type="text" id="fieldLocation" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">ステータス</label>
-                        <select id="fieldStatus" class="w-full p-2.5 rounded-xl glass-input text-xs">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">ステータス</label>
+                        <select id="fieldStatus" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                             <option value="未交渉">未交渉</option>
                             <option value="交渉中">交渉中</option>
                             <option value="契約締結">契約締結</option>
@@ -783,13 +640,12 @@
                     </div>
                 `;
             }
-
             document.getElementById('dataModal').classList.remove('hidden');
         }
 
         function openEditModal(type, id, arg1, arg2, arg3, arg4) {
             openCreateModal();
-            document.getElementById('modalFormTitle').innerText = type === 'tasks' ? 'タスク編集' : 'ホテル情報編集';
+            document.getElementById('modalFormTitle').innerText = type === 'tasks' ? 'タスク編集' : 'ホテル編集';
             document.getElementById('formItemType').value = type;
             document.getElementById('formItemId').value = id;
 
@@ -805,15 +661,11 @@
             }
         }
 
-        function closeDataModal() {
-            document.getElementById('dataModal').classList.add('hidden');
-        }
-
         function handleFormSubmit(e) {
             e.preventDefault();
             const type = document.getElementById('formItemType').value;
             const id = document.getElementById('formItemId').value;
-            const userName = currentState.user ? currentState.user.name : 'ゲストユーザー';
+            const userName = currentState.user ? currentState.user.name : 'ゲスト';
             const nowTime = new Date().toISOString().replace('T', ' ').substring(0, 16);
 
             if (type === 'tasks') {
@@ -824,15 +676,13 @@
                     due: document.getElementById('fieldDue').value,
                     status: document.getElementById('fieldStatus').value
                 };
-
                 if (id) {
                     const idx = currentState.tasks.findIndex(t => t.id === id);
                     if (idx !== -1) currentState.tasks[idx] = item;
-                    currentState.logs.unshift({ time: nowTime, user: userName, action: `タスク『${item.title}』を更新` });
                 } else {
                     currentState.tasks.push(item);
-                    currentState.logs.unshift({ time: nowTime, user: userName, action: `新規タスク『${item.title}』を追加` });
                 }
+                currentState.logs.unshift({ time: nowTime, user: userName, action: `タスク『${item.title}』を保存` });
             } else {
                 const item = {
                     id: id || String(Date.now()),
@@ -840,15 +690,13 @@
                     location: document.getElementById('fieldLocation').value,
                     status: document.getElementById('fieldStatus').value
                 };
-
                 if (id) {
                     const idx = currentState.hotels.findIndex(h => h.id === id);
                     if (idx !== -1) currentState.hotels[idx] = item;
-                    currentState.logs.unshift({ time: nowTime, user: userName, action: `ホテル『${item.name}』を更新` });
                 } else {
                     currentState.hotels.push(item);
-                    currentState.logs.unshift({ time: nowTime, user: userName, action: `新規ホテル『${item.name}』を追加` });
                 }
+                currentState.logs.unshift({ time: nowTime, user: userName, action: `ホテル『${item.name}』を保存` });
             }
 
             closeDataModal();
@@ -857,30 +705,17 @@
 
         function deleteItem(type, id) {
             if (!confirm("本当に削除しますか？")) return;
-            const userName = currentState.user ? currentState.user.name : 'ゲストユーザー';
-            const nowTime = new Date().toISOString().replace('T', ' ').substring(0, 16);
-
             if (type === 'tasks') {
-                const item = currentState.tasks.find(t => t.id === id);
-                if (item) currentState.logs.unshift({ time: nowTime, user: userName, action: `タスク『${item.title}』を削除` });
                 currentState.tasks = currentState.tasks.filter(t => t.id !== id);
             } else {
-                const item = currentState.hotels.find(h => h.id === id);
-                if (item) currentState.logs.unshift({ time: nowTime, user: userName, action: `ホテル『${item.name}』を削除` });
                 currentState.hotels = currentState.hotels.filter(h => h.id !== id);
             }
-
             renderDashboardData();
         }
 
         function escapeHtml(str) {
             if (!str) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
     </script>
 </body>
