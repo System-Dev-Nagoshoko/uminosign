@@ -29,6 +29,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- Google Identity Services (GIS) SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
         body {
@@ -61,9 +63,9 @@
                     <span id="roleBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 uppercase">GUEST</span>
                 </div>
 
-                <button id="authBtn" onclick="openLoginModal()" class="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium flex items-center space-x-1.5 transition shadow-sm">
-                    <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
-                    <span class="hidden sm:inline">ログイン</span>
+                <button id="authBtn" onclick="toggleAuthAction()" class="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium flex items-center space-x-1.5 transition shadow-sm">
+                    <i id="authBtnIcon" data-lucide="log-in" class="w-3.5 h-3.5"></i>
+                    <span id="authBtnText" class="hidden sm:inline">ログイン</span>
                 </button>
             </div>
         </div>
@@ -146,6 +148,24 @@
             <p class="text-xs text-slate-500 mb-5">ご利用のアカウントを選択してください。</p>
 
             <div class="space-y-3">
+                <!-- Google Login Button -->
+                <div class="flex justify-center w-full">
+                    <div id="g_id_onload"
+                         data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+                         data-callback="handleGoogleCallback"
+                         data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin w-full flex justify-center"
+                         data-type="standard"
+                         data-size="large"
+                         data-theme="outline"
+                         data-text="sign_in_with"
+                         data-shape="rectangular"
+                         data-logo_alignment="left">
+                    </div>
+                </div>
+
+                <!-- LINE Login Button -->
                 <button onclick="loginWithLine()" class="w-full py-2.5 rounded-lg bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs flex items-center justify-center space-x-2 transition shadow-sm">
                     <i data-lucide="message-square" class="w-4 h-4"></i>
                     <span>LINEでログイン</span>
@@ -244,6 +264,104 @@
             }
         }
 
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+        }
+
+        function toggleAuthAction() {
+            if (currentState.authType !== 'guest') {
+                // ログアウト処理
+                currentState.user = null;
+                currentState.authType = 'guest';
+                currentState.token = '';
+                localStorage.removeItem('uminosign_auth');
+                updateUserUI();
+                fetchDashboardData();
+            } else {
+                openLoginModal();
+            }
+        }
+
+        /* 🔐 認証関連処理 */
+        function handleGoogleCallback(response) {
+            try {
+                // JWTデコード（簡易パース）
+                const base64Url = response.credential.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+                const payload = JSON.parse(jsonPayload);
+
+                currentState.user = {
+                    name: payload.name || payload.email,
+                    picture: payload.picture,
+                    role: 'GENERAL'
+                };
+                currentState.authType = 'google';
+                currentState.token = response.credential;
+
+                saveSession();
+                updateUserUI();
+                closeLoginModal();
+                fetchDashboardData();
+            } catch (e) {
+                console.error("Google Auth Decode Error:", e);
+                alert("Googleログインに失敗しました。");
+            }
+        }
+
+        function loginWithLine() {
+            if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                liff.getProfile().then(profile => {
+                    currentState.user = {
+                        name: profile.displayName,
+                        picture: profile.pictureUrl,
+                        role: 'GENERAL'
+                    };
+                    currentState.authType = 'line';
+                    currentState.token = liff.getAccessToken();
+                    saveSession();
+                    updateUserUI();
+                    closeLoginModal();
+                    fetchDashboardData();
+                }).catch(err => console.error("LINE Profile error:", err));
+            } else if (typeof liff !== 'undefined') {
+                liff.login();
+            } else {
+                alert("LIFF SDKが読み込まれていません。");
+            }
+        }
+
+        function loginWithAdminPasscode() {
+            const passcode = document.getElementById('adminPasscodeInput').value;
+            if (!passcode) return;
+
+            currentState.user = {
+                name: '管理者',
+                picture: 'https://placehold.co/80x80/0f172a/ffffff?text=A',
+                role: 'ADMIN'
+            };
+            currentState.authType = 'admin';
+            currentState.token = passcode;
+
+            saveSession();
+            updateUserUI();
+            closeLoginModal();
+            fetchDashboardData();
+            document.getElementById('adminPasscodeInput').value = '';
+        }
+
+        function saveSession() {
+            localStorage.setItem('uminosign_auth', JSON.stringify({
+                user: currentState.user,
+                authType: currentState.authType,
+                token: currentState.token
+            }));
+        }
+
         function loadStoredSession() {
             const stored = localStorage.getItem('uminosign_auth');
             if (stored) {
@@ -257,6 +375,40 @@
                     localStorage.removeItem('uminosign_auth');
                 }
             }
+        }
+
+        function updateUserUI() {
+            const userNameEl = document.getElementById('userName');
+            const userAvatarEl = document.getElementById('userAvatar');
+            const roleBadgeEl = document.getElementById('roleBadge');
+            const authSourceEl = document.getElementById('authSource');
+            const statRoleTextEl = document.getElementById('statRoleText');
+            const authBtnText = document.getElementById('authBtnText');
+            const authBtnIcon = document.getElementById('authBtnIcon');
+
+            if (currentState.authType !== 'guest' && currentState.user) {
+                userNameEl.innerText = currentState.user.name || 'ユーザー';
+                userAvatarEl.src = currentState.user.picture || 'https://placehold.co/80x80/0284c7/ffffff?text=U';
+                roleBadgeEl.innerText = currentState.user.role || 'USER';
+
+                const authLabel = currentState.authType === 'google' ? 'Google' : currentState.authType === 'line' ? 'LINE' : '管理者パスコード';
+                authSourceEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> ${authLabel} 認証済`;
+                statRoleTextEl.innerText = currentState.user.role === 'ADMIN' ? 'システム管理者' : '一般ユーザー';
+
+                authBtnText.innerText = "ログアウト";
+                authBtnIcon.setAttribute('data-lucide', 'log-out');
+            } else {
+                userNameEl.innerText = 'ゲスト';
+                userAvatarEl.src = 'https://placehold.co/80x80/0284c7/ffffff?text=U';
+                roleBadgeEl.innerText = 'GUEST';
+
+                authSourceEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400 inline-block"></span> 未認証`;
+                statRoleTextEl.innerText = '一般ユーザー';
+
+                authBtnText.innerText = "ログイン";
+                authBtnIcon.setAttribute('data-lucide', 'log-in');
+            }
+            lucide.createIcons();
         }
 
         async function fetchDashboardData() {
@@ -291,7 +443,7 @@
         }
 
         function renderTasksView(container) {
-            if (currentState.tasks.length === 0) {
+            if (!currentState.tasks || currentState.tasks.length === 0) {
                 container.innerHTML = `<p class="text-center py-8 text-xs text-slate-400">タスクはありません</p>`;
                 return;
             }
@@ -338,7 +490,7 @@
         }
 
         function renderHotelsView(container) {
-            if (currentState.hotels.length === 0) {
+            if (!currentState.hotels || currentState.hotels.length === 0) {
                 container.innerHTML = `<p class="text-center py-8 text-xs text-slate-400">ホテル・企業データはありません</p>`;
                 return;
             }
@@ -387,6 +539,11 @@
         }
 
         function renderLogsView(container) {
+            if (!currentState.logs || currentState.logs.length === 0) {
+                container.innerHTML = `<p class="text-center py-8 text-xs text-slate-400">操作ログはありません</p>`;
+                return;
+            }
+
             container.innerHTML = `
                 <div class="space-y-2">
                     ${currentState.logs.map(l => `
@@ -440,6 +597,10 @@
         }
 
         /* 📝 モーダル & フォーム処理 */
+        function closeDataModal() {
+            document.getElementById('dataModal').classList.add('hidden');
+        }
+
         function openCreateModal() {
             const type = currentState.activeTab;
             document.getElementById('modalFormTitle').innerText = type === 'tasks' ? '新規タスク作成' : '新規ホテル・企業登録';
@@ -509,6 +670,44 @@
             document.getElementById('dataModal').classList.remove('hidden');
         }
 
+        function openEditTaskModal(id) {
+            const item = currentState.tasks.find(t => String(t.id) === String(id));
+            if (!item) return;
+
+            document.getElementById('modalFormTitle').innerText = 'タスク編集';
+            document.getElementById('formItemType').value = 'tasks';
+            document.getElementById('formItemId').value = id;
+
+            const container = document.getElementById('formFieldsContainer');
+            container.innerHTML = `
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">タスク名</label>
+                    <input type="text" id="fieldTitle" value="${escapeHtml(item.title)}" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">チーム内担当者</label>
+                    <input type="text" id="fieldTeamAssignee" value="${escapeHtml(item.team_assignee || item.assignee || item.team || '')}" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">期限</label>
+                    <input type="date" id="fieldDue" value="${escapeHtml(item.due)}" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">ステータス</label>
+                    <select id="fieldStatus" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <option value="未着手" ${item.status === '未着手' ? 'selected' : ''}>未着手</option>
+                        <option value="進行中" ${item.status === '進行中' ? 'selected' : ''}>進行中</option>
+                        <option value="完了" ${item.status === '完了' ? 'selected' : ''}>完了</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">詳細・備考</label>
+                    <textarea id="fieldDescription" rows="3" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">${escapeHtml(item.description || item.detail || '')}</textarea>
+                </div>
+            `;
+            document.getElementById('dataModal').classList.remove('hidden');
+        }
+
         function openEditHotelModal(id) {
             const item = currentState.hotels.find(h => String(h.id) === String(id));
             if (!item) return;
@@ -551,54 +750,23 @@
             document.getElementById('dataModal').classList.remove('hidden');
         }
 
-        function openEditTaskModal(id) {
-            const item = currentState.tasks.find(t => String(t.id) === String(id));
-            if (!item) return;
-
-            document.getElementById('modalFormTitle').innerText = 'タスク編集';
-            document.getElementById('formItemType').value = 'tasks';
-            document.getElementById('formItemId').value = id;
-
-            const container = document.getElementById('formFieldsContainer');
-            container.innerHTML = `
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">タスク名</label>
-                    <input type="text" id="fieldTitle" value="${escapeHtml(item.title)}" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">チーム内担当者</label>
-                    <input type="text" id="fieldTeamAssignee" value="${escapeHtml(item.team_assignee || item.assignee || item.team || '')}" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">期限</label>
-                    <input type="date" id="fieldDue" value="${escapeHtml(item.due)}" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">ステータス</label>
-                    <select id="fieldStatus" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                        <option value="未着手" ${item.status === '未着手' ? 'selected' : ''}>未着手</option>
-                        <option value="進行中" ${item.status === '進行中' ? 'selected' : ''}>進行中</option>
-                        <option value="完了" ${item.status === '完了' ? 'selected' : ''}>完了</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">詳細・備考</label>
-                    <textarea id="fieldDescription" rows="3" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">${escapeHtml(item.description || item.detail || '')}</textarea>
-                </div>
-            `;
-            document.getElementById('dataModal').classList.remove('hidden');
-        }
-
-        async function handleFormSubmit(event) {
-            event.preventDefault();
+        async function handleFormSubmit(e) {
+            e.preventDefault();
             const type = document.getElementById('formItemType').value;
             const id = document.getElementById('formItemId').value;
             const isEdit = Boolean(id);
 
             let payload = {};
-            if (type === 'hotels') {
+            if (type === 'tasks') {
                 payload = {
-                    id: id || undefined,
+                    title: document.getElementById('fieldTitle').value,
+                    team_assignee: document.getElementById('fieldTeamAssignee').value,
+                    due: document.getElementById('fieldDue').value,
+                    status: document.getElementById('fieldStatus').value,
+                    description: document.getElementById('fieldDescription').value
+                };
+            } else if (type === 'hotels') {
+                payload = {
                     name: document.getElementById('fieldHotelName').value,
                     contact_person: document.getElementById('fieldHotelClientAssignee').value,
                     team_assignee: document.getElementById('fieldHotelTeamAssignee').value,
@@ -606,20 +774,14 @@
                     status: document.getElementById('fieldHotelStatus').value,
                     description: document.getElementById('fieldHotelDescription').value
                 };
-            } else if (type === 'tasks') {
-                payload = {
-                    id: id || undefined,
-                    title: document.getElementById('fieldTitle').value,
-                    team_assignee: document.getElementById('fieldTeamAssignee').value,
-                    due: document.getElementById('fieldDue').value,
-                    status: document.getElementById('fieldStatus').value,
-                    description: document.getElementById('fieldDescription').value
-                };
             }
 
+            const url = isEdit ? `${API_BASE}/api/${type}/${id}` : `${API_BASE}/api/${type}`;
+            const method = isEdit ? 'PUT' : 'POST';
+
             try {
-                const res = await fetch(`${API_BASE}/api/${type}`, {
-                    method: isEdit ? 'PUT' : 'POST',
+                const res = await fetch(url, {
+                    method,
                     headers: getAuthHeaders(),
                     body: JSON.stringify(payload)
                 });
@@ -628,124 +790,32 @@
                     closeDataModal();
                     fetchDashboardData();
                 } else {
-                    const err = await res.json();
-                    alert('保存に失敗しました: ' + (err.error || 'エラーが発生しました'));
+                    alert("保存に失敗しました。");
                 }
             } catch (err) {
-                alert('通信エラーが発生しました');
+                console.error("Save Error:", err);
+                alert("通信エラーが発生しました。");
             }
         }
 
         async function deleteItem(type, id) {
-            if (!confirm('本当に削除しますか？')) return;
+            if (!confirm("本当に削除しますか？")) return;
 
             try {
-                const res = await fetch(`${API_BASE}/api/${type}`, {
+                const res = await fetch(`${API_BASE}/api/${type}/${id}`, {
                     method: 'DELETE',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ id })
+                    headers: getAuthHeaders()
                 });
 
                 if (res.ok) {
                     fetchDashboardData();
                 } else {
-                    const err = await res.json();
-                    alert('削除エラー: ' + (err.error || '権限がありません'));
+                    alert("削除に失敗しました。");
                 }
             } catch (err) {
-                alert('通信エラーが発生しました');
+                console.error("Delete Error:", err);
+                alert("通信エラーが発生しました。");
             }
-        }
-
-        /* 🔐 認証処理 */
-        function openLoginModal() { document.getElementById('loginModal').classList.remove('hidden'); }
-        function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); }
-        function closeDataModal() { document.getElementById('dataModal').classList.add('hidden'); }
-
-        async function loginWithLine() {
-            if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                const profile = await liff.getProfile();
-                const idToken = liff.getIDToken();
-                await processAuthResult(`LINE:${idToken}`, { name: profile.displayName, linePic: profile.pictureUrl });
-            } else if (typeof liff !== 'undefined' && LIFF_ID) {
-                liff.login();
-            }
-        }
-
-        function loginWithAdminPasscode() {
-            const passcode = document.getElementById('adminPasscodeInput').value.trim();
-            if (!passcode) return alert("パスコードを入力してください。");
-            processAuthResult(`ADMIN:${passcode}`, { passcode, name: '管理者' });
-        }
-
-        async function processAuthResult(authToken, payloadData) {
-            try {
-                const res = await fetch(`${API_BASE}/api/auth/verify`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Custom-Auth': authToken,
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify(payloadData)
-                });
-
-                const data = await res.json();
-                if (res.ok && data.authenticated) {
-                    setSession(data.user, data.user.role, authToken);
-                } else {
-                    setSession({ name: payloadData.name || '管理者', role: 'ADMIN', avatar: '' }, 'ADMIN', authToken);
-                }
-            } catch (err) {
-                setSession({ name: payloadData.name || '管理者', role: 'ADMIN', avatar: '' }, 'ADMIN', authToken);
-            }
-            closeLoginModal();
-            fetchDashboardData();
-        }
-
-        function setSession(user, authType, token) {
-            currentState.user = user;
-            currentState.authType = authType;
-            currentState.token = token;
-            localStorage.setItem('uminosign_auth', JSON.stringify({ user, authType, token }));
-            updateUserUI();
-        }
-
-        function updateUserUI() {
-            const user = currentState.user;
-            if (!user) return;
-
-            document.getElementById('userName').innerText = user.name;
-            document.getElementById('userAvatar').src = user.avatar_url || user.avatar || 'https://placehold.co/80x80/0284c7/ffffff?text=A';
-            document.getElementById('roleBadge').innerText = user.role || 'USER';
-            document.getElementById('statRoleText').innerText = (user.role && user.role.toUpperCase() === 'ADMIN') ? '管理者権限' : '一般権限';
-            document.getElementById('authSource').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> 認証済み`;
-
-            const authBtn = document.getElementById('authBtn');
-            authBtn.innerHTML = `<i data-lucide="log-out" class="w-3.5 h-3.5"></i><span class="hidden sm:inline">ログアウト</span>`;
-            authBtn.onclick = logout;
-            lucide.createIcons();
-        }
-
-        function logout() {
-            currentState.user = null;
-            currentState.authType = 'guest';
-            currentState.token = '';
-            localStorage.removeItem('uminosign_auth');
-
-            document.getElementById('userName').innerText = 'ゲスト';
-            document.getElementById('userAvatar').src = 'https://placehold.co/80x80/0284c7/ffffff?text=U';
-            document.getElementById('roleBadge').innerText = 'GUEST';
-            document.getElementById('statRoleText').innerText = '一般ユーザー';
-            document.getElementById('authSource').innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400 inline-block"></span> 未認証`;
-
-            const authBtn = document.getElementById('authBtn');
-            authBtn.innerHTML = `<i data-lucide="log-in" class="w-3.5 h-3.5"></i><span class="hidden sm:inline">ログイン</span>`;
-            authBtn.onclick = openLoginModal;
-            lucide.createIcons();
-
-            if (window.liff && liff.isLoggedIn()) liff.logout();
-            fetchDashboardData();
         }
     </script>
 </body>
