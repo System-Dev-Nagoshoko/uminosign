@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <!-- 固定幅デザイン（レスポンシブ非対応指定） -->
-    <meta name="viewport" content="width=1280">
+    <!-- スマホ・レスポンシブ対応メタタグ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>海のサインプロジェクト - 管理ダッシュボード</title>
 
     <link rel="icon" href="data:,">
@@ -31,18 +31,6 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
-        /* レスポンシブ非対応：完全に1200px幅固定 */
-        html, body {
-            min-width: 1240px; /* 1200px + パディング余白 */
-            overflow-x: auto;  /* 画面が狭い場合は横スクロール */
-        }
-
-        .fixed-layout {
-            width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
         /* 🌈 背景グラデーションアニメーション */
         body {
             background: linear-gradient(-45deg, #0c4a6e, #075985, #0284c7, #1e293b, #0f172a);
@@ -52,6 +40,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             min-height: 100vh;
             position: relative;
+            overflow-x: hidden; /* 全体の横スクロールブレを防止 */
         }
 
         @keyframes gradientBG {
@@ -65,34 +54,40 @@
             position: fixed;
             pointer-events: none;
             z-index: 0;
-            opacity: 0.6;
+            opacity: 0.5;
             filter: blur(1px);
         }
 
         /* クリスタル（菱形） */
         .crystal {
-            width: 40px;
-            height: 40px;
+            width: 30px;
+            height: 30px;
             background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(56,189,248,0.3));
             clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
             backdrop-filter: blur(4px);
             box-shadow: 0 8px 32px 0 rgba(0, 191, 255, 0.37);
         }
 
-        /* 浮遊キーフレームアニメーション */
+        @media (min-width: 768px) {
+            .crystal {
+                width: 40px;
+                height: 40px;
+            }
+        }
+
         @keyframes floatSlow {
             0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
-            50% { transform: translateY(-25px) rotate(15deg) scale(1.05); }
+            50% { transform: translateY(-20px) rotate(15deg) scale(1.05); }
         }
 
         @keyframes floatFast {
             0%, 100% { transform: translateY(0px) rotate(45deg) scale(1); }
-            50% { transform: translateY(-40px) rotate(60deg) scale(1.1); }
+            50% { transform: translateY(-30px) rotate(60deg) scale(1.1); }
         }
 
         @keyframes floatReverse {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(30px) rotate(-20deg); }
+            50% { transform: translateY(20px) rotate(-20deg); }
         }
 
         .anim-float-1 { animation: floatSlow 8s ease-in-out infinite; }
@@ -107,125 +102,123 @@
         }
     </style>
 </head>
-<body class="flex flex-col justify-between">
+<body class="flex flex-col min-h-screen justify-between">
 
-    <!-- 🔮 背景浮遊オブジェクト（クリスタル・図形） -->
-    <div class="bg-shape crystal anim-float-1" style="top: 10%; left: 5%; width: 60px; height: 60px;"></div>
-    <div class="bg-shape crystal anim-float-2" style="top: 60%; left: 8%; width: 40px; height: 40px;"></div>
-    <div class="bg-shape crystal anim-float-3" style="top: 20%; right: 7%; width: 80px; height: 80px;"></div>
-    <div class="bg-shape crystal anim-float-1" style="bottom: 15%; right: 12%; width: 50px; height: 50px;"></div>
-    
-    <!-- 丸型・グラデーションオブジェクト -->
-    <div class="bg-shape rounded-full bg-gradient-to-r from-cyan-400/30 to-blue-600/30 anim-float-3" style="top: 40%; left: 85%; width: 120px; height: 120px; filter: blur(20px);"></div>
-    <div class="bg-shape rounded-full bg-gradient-to-r from-teal-300/30 to-sky-500/30 anim-float-2" style="bottom: 10%; left: 20%; width: 160px; height: 160px; filter: blur(25px);"></div>
+    <!-- 🔮 背景浮遊オブジェクト -->
+    <div class="bg-shape crystal anim-float-1" style="top: 10%; left: 3%;"></div>
+    <div class="bg-shape crystal anim-float-2" style="top: 65%; left: 5%;"></div>
+    <div class="bg-shape crystal anim-float-3" style="top: 18%; right: 4%;"></div>
+    <div class="bg-shape crystal anim-float-1" style="bottom: 12%; right: 8%;"></div>
+    <div class="bg-shape rounded-full bg-gradient-to-r from-cyan-400/30 to-blue-600/30 anim-float-3" style="top: 40%; right: 5%; width: 80px; height: 80px; filter: blur(15px);"></div>
 
 
     <!-- 🌐 HEADER -->
     <header class="glass-panel sticky top-0 z-30 shadow-md w-full">
-        <div class="fixed-layout h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center text-white shadow-lg">
-                    <i data-lucide="waves" class="w-6 h-6"></i>
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center text-white shadow-lg shrink-0">
+                    <i data-lucide="waves" class="w-5 h-5 sm:w-6 sm:h-6"></i>
                 </div>
-                <span class="font-bold text-xl text-slate-800 tracking-tight">
-                    海のサインプロジェクト <span class="text-xs text-brand-600 font-normal border border-brand-200 bg-brand-50 px-2 py-0.5 rounded-full">Dashboard</span>
+                <span class="font-bold text-base sm:text-xl text-slate-800 tracking-tight flex items-center gap-1.5">
+                    海のサイン<span class="hidden xs:inline">プロジェクト</span>
+                    <span class="text-[10px] sm:text-xs text-brand-600 font-normal border border-brand-200 bg-brand-50 px-1.5 py-0.5 rounded-full">Dashboard</span>
                 </span>
             </div>
 
-            <div class="flex items-center space-x-4">
-                <div class="flex items-center space-x-2 bg-slate-100/80 px-3 py-1.5 rounded-full border border-slate-200/80 shadow-inner">
-                    <img id="userAvatar" src="https://placehold.co/80x80/0284c7/ffffff?text=U" alt="Avatar" class="w-7 h-7 rounded-full object-cover">
-                    <div class="text-left">
-                        <div id="userName" class="text-xs font-semibold text-slate-700 max-w-[120px] truncate">ゲスト</div>
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <div class="flex items-center space-x-1.5 sm:space-x-2 bg-slate-100/80 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border border-slate-200/80 shadow-inner">
+                    <img id="userAvatar" src="https://placehold.co/80x80/0284c7/ffffff?text=U" alt="Avatar" class="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover">
+                    <div class="text-left hidden sm:block">
+                        <div id="userName" class="text-xs font-semibold text-slate-700 max-w-[100px] truncate">ゲスト</div>
                     </div>
-                    <span id="roleBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 uppercase">GUEST</span>
+                    <span id="roleBadge" class="text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 uppercase">GUEST</span>
                 </div>
 
-                <button id="authBtn" onclick="toggleAuthAction()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-sky-500 hover:from-brand-700 hover:to-sky-600 text-white text-xs font-semibold flex items-center space-x-1.5 transition shadow-md">
-                    <i id="authBtnIcon" data-lucide="log-in" class="w-4 h-4"></i>
-                    <span id="authBtnText">ログイン</span>
+                <button id="authBtn" onclick="toggleAuthAction()" class="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-brand-600 to-sky-500 hover:from-brand-700 hover:to-sky-600 text-white text-xs font-semibold flex items-center space-x-1 transition shadow-md shrink-0">
+                    <i id="authBtnIcon" data-lucide="log-in" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                    <span id="authBtnText" class="text-xs">ログイン</span>
                 </button>
             </div>
         </div>
     </header>
 
     <!-- 📊 MAIN CONTAINER -->
-    <main class="fixed-layout py-8 flex-1 space-y-6 relative z-10">
+    <main class="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-8 flex-1 space-y-4 sm:space-y-6 relative z-10 w-full">
         
-        <!-- Status Overview Cards -->
-        <div class="grid grid-cols-3 gap-6">
-            <div class="glass-panel p-5 rounded-2xl shadow-sm flex items-center justify-between">
+        <!-- Status Overview Cards (スマホでは1列、タブレット以上で3列) -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
+            <div class="glass-panel p-4 sm:p-5 rounded-2xl shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">認証状態</p>
-                    <p id="authSource" class="text-base font-bold text-slate-700 mt-1 flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block shrink-0"></span> 未認証
+                    <p class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">認証状態</p>
+                    <p id="authSource" class="text-sm sm:text-base font-bold text-slate-700 mt-1 flex items-center gap-2">
+                        <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-slate-400 inline-block shrink-0"></span> 未認証
                     </p>
                 </div>
-                <div class="p-3 bg-brand-50 text-brand-600 rounded-xl border border-brand-100">
-                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                <div class="p-2.5 sm:p-3 bg-brand-50 text-brand-600 rounded-xl border border-brand-100">
+                    <i data-lucide="shield-check" class="w-5 h-5 sm:w-6 sm:h-6"></i>
                 </div>
             </div>
 
-            <div class="glass-panel p-5 rounded-2xl shadow-sm flex items-center justify-between">
+            <div class="glass-panel p-4 sm:p-5 rounded-2xl shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">アクセス権限</p>
-                    <p id="statRoleText" class="text-base font-bold text-slate-700 mt-1">一般</p>
+                    <p class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">アクセス権限</p>
+                    <p id="statRoleText" class="text-sm sm:text-base font-bold text-slate-700 mt-1">一般</p>
                 </div>
-                <div class="p-3 bg-brand-50 text-brand-600 rounded-xl border border-brand-100">
-                    <i data-lucide="key-round" class="w-6 h-6"></i>
+                <div class="p-2.5 sm:p-3 bg-brand-50 text-brand-600 rounded-xl border border-brand-100">
+                    <i data-lucide="key-round" class="w-5 h-5 sm:w-6 sm:h-6"></i>
                 </div>
             </div>
 
-            <div class="glass-panel p-5 rounded-2xl shadow-sm flex items-center justify-between">
+            <div class="glass-panel p-4 sm:p-5 rounded-2xl shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">DB接続状況</p>
-                    <p id="apiStatusText" class="text-base font-bold text-slate-700 mt-1">確認中...</p>
+                    <p class="text-[10px] sm:text-xs font-medium text-slate-400 uppercase tracking-wider">DB接続状況</p>
+                    <p id="apiStatusText" class="text-sm sm:text-base font-bold text-slate-700 mt-1">確認中...</p>
                 </div>
-                <div class="p-3 bg-brand-50 text-brand-600 rounded-xl border border-brand-100">
-                    <i data-lucide="database" class="w-6 h-6"></i>
+                <div class="p-2.5 sm:p-3 bg-brand-50 text-brand-600 rounded-xl border border-brand-100">
+                    <i data-lucide="database" class="w-5 h-5 sm:w-6 sm:h-6"></i>
                 </div>
             </div>
         </div>
 
         <!-- Controls & Data Section -->
-        <div class="glass-panel rounded-2xl shadow-xl p-6">
-            <div class="flex items-center justify-between gap-4 mb-6">
+        <div class="glass-panel rounded-2xl shadow-xl p-4 sm:p-6">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4 sm:mb-6">
                 <!-- Navigation Tabs -->
-                <div class="flex bg-slate-200/60 p-1.5 rounded-xl border border-slate-300/50">
-                    <button id="tabTasksBtn" onclick="switchDataTab('tasks')" class="px-5 py-2 rounded-lg text-xs font-bold bg-white text-brand-600 shadow-md transition">
+                <div class="flex bg-slate-200/60 p-1 rounded-xl border border-slate-300/50 w-full sm:w-auto justify-between sm:justify-start">
+                    <button id="tabTasksBtn" onclick="switchDataTab('tasks')" class="flex-1 sm:flex-none px-3 sm:px-5 py-2 rounded-lg text-xs font-bold bg-white text-brand-600 shadow-md transition text-center">
                         タスク管理
                     </button>
-                    <button id="tabHotelsBtn" onclick="switchDataTab('hotels')" class="px-5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition">
-                        交渉・企業管理
+                    <button id="tabHotelsBtn" onclick="switchDataTab('hotels')" class="flex-1 sm:flex-none px-3 sm:px-5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition text-center">
+                        交渉・企業
                     </button>
-                    <button id="tabLogsBtn" onclick="switchDataTab('logs')" class="px-5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition">
+                    <button id="tabLogsBtn" onclick="switchDataTab('logs')" class="flex-1 sm:flex-none px-3 sm:px-5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition text-center">
                         操作ログ
                     </button>
                 </div>
 
                 <!-- Add Button -->
-                <button id="addItemBtn" onclick="openCreateModal()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-cyan-600 hover:from-brand-700 hover:to-cyan-700 text-white text-xs font-bold flex items-center space-x-2 transition shadow-lg shrink-0">
+                <button id="addItemBtn" onclick="openCreateModal()" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-cyan-600 hover:from-brand-700 hover:to-cyan-700 text-white text-xs font-bold flex items-center justify-center space-x-1.5 transition shadow-lg shrink-0">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     <span id="addItemBtnText">新規タスク追加</span>
                 </button>
             </div>
 
-            <!-- DATA CONTAINER -->
-            <div id="dataContainer" class="min-h-[300px]"></div>
+            <!-- DATA CONTAINER (テーブルは横スクロール対応) -->
+            <div id="dataContainer" class="min-h-[250px] overflow-x-auto"></div>
         </div>
     </main>
 
     <!-- 🔐 LOGIN MODAL -->
     <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md hidden">
-        <div class="bg-white/95 w-[380px] rounded-2xl p-6 border border-white/50 shadow-2xl relative">
-            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+        <div class="bg-white/95 w-[92vw] max-w-[380px] rounded-2xl p-5 sm:p-6 border border-white/50 shadow-2xl relative">
+            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
 
-            <h3 class="text-lg font-bold text-slate-800 mb-1">システムログイン</h3>
-            <p class="text-xs text-slate-500 mb-6">ご利用のアカウントで認証を行ってください。</p>
+            <h3 class="text-base sm:text-lg font-bold text-slate-800 mb-1">システムログイン</h3>
+            <p class="text-xs text-slate-500 mb-5">ご利用のアカウントで認証を行ってください。</p>
 
-            <div class="space-y-4">
+            <div class="space-y-3.5">
                 <div class="flex justify-center w-full">
                     <div id="g_id_signin_btn" class="w-full flex justify-center"></div>
                 </div>
@@ -236,10 +229,10 @@
                 </button>
 
                 <div class="pt-3 border-t border-slate-200">
-                    <p class="text-[11px] font-medium text-slate-500 mb-2">管理者用パスコード</p>
+                    <p class="text-[11px] font-medium text-slate-500 mb-1.5">管理者用パスコード</p>
                     <div class="flex gap-2">
-                        <input type="password" id="adminPasscodeInput" placeholder="パスコードを入力" class="flex-1 p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                        <button onclick="loginWithAdminPasscode()" class="px-4 py-2.5 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-900 transition shrink-0">
+                        <input type="password" id="adminPasscodeInput" placeholder="パスコード" class="flex-1 p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <button onclick="loginWithAdminPasscode()" class="px-3.5 py-2.5 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-900 transition shrink-0">
                             認証
                         </button>
                     </div>
@@ -250,20 +243,20 @@
 
     <!-- 📝 CRUD MODAL -->
     <div id="dataModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md hidden">
-        <div class="bg-white/95 w-[480px] rounded-2xl p-6 border border-white/50 shadow-2xl relative max-h-[85vh] flex flex-col">
-            <button onclick="closeDataModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+        <div class="bg-white/95 w-[92vw] max-w-[480px] rounded-2xl p-5 sm:p-6 border border-white/50 shadow-2xl relative max-h-[90vh] flex flex-col">
+            <button onclick="closeDataModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
 
-            <h3 id="modalFormTitle" class="text-lg font-bold text-slate-800 mb-4 shrink-0">データ編集</h3>
+            <h3 id="modalFormTitle" class="text-base sm:text-lg font-bold text-slate-800 mb-4 shrink-0">データ編集</h3>
 
-            <form id="dataForm" onsubmit="handleFormSubmit(event)" class="space-y-4 overflow-y-auto pr-1 flex-1">
+            <form id="dataForm" onsubmit="handleFormSubmit(event)" class="space-y-3.5 overflow-y-auto pr-1 flex-1">
                 <input type="hidden" id="formItemType">
                 <input type="hidden" id="formItemId">
 
-                <div id="formFieldsContainer" class="space-y-4"></div>
+                <div id="formFieldsContainer" class="space-y-3.5"></div>
 
-                <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200 sticky bottom-0 bg-white/95">
+                <div class="flex items-center justify-end space-x-2.5 pt-4 border-t border-slate-200 sticky bottom-0 bg-white/95">
                     <button type="button" onclick="closeDataModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 text-xs font-semibold hover:bg-slate-50">
                         キャンセル
                     </button>
@@ -275,9 +268,9 @@
         </div>
     </div>
 
-    <footer class="bg-slate-900/40 border-t border-white/10 py-4 mt-auto relative z-10 backdrop-blur-sm w-full">
-        <div class="fixed-layout text-center text-xs text-slate-300/80">
-            &copy; 海のサインプロジェクト Dashboard System
+    <footer class="bg-slate-900/40 border-t border-white/10 py-3.5 mt-auto relative z-10 backdrop-blur-sm w-full">
+        <div class="max-w-6xl mx-auto px-4 text-center text-xs text-slate-300/80">
+            &copy; 海のサインプロジェクト Dashboard
         </div>
     </footer>
 
@@ -577,7 +570,7 @@
                 roleBadgeEl.innerText = currentState.user.role || 'USER';
 
                 const authLabel = currentState.authType === 'google' ? 'Google' : currentState.authType === 'line' ? 'LINE' : 'パスコード';
-                authSourceEl.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shrink-0"></span> ${authLabel} 認証済`;
+                authSourceEl.innerHTML = `<span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 inline-block shrink-0"></span> ${authLabel} 認証済`;
                 statRoleTextEl.innerText = currentState.user.role === 'ADMIN' ? '管理者' : '一般';
 
                 authBtnText.innerText = "ログアウト";
@@ -587,7 +580,7 @@
                 userAvatarEl.src = 'https://placehold.co/80x80/0284c7/ffffff?text=U';
                 roleBadgeEl.innerText = 'GUEST';
 
-                authSourceEl.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block shrink-0"></span> 未認証`;
+                authSourceEl.innerHTML = `<span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-slate-400 inline-block shrink-0"></span> 未認証`;
                 statRoleTextEl.innerText = '一般';
 
                 authBtnText.innerText = "ログイン";
@@ -637,8 +630,8 @@
             const addBtn = document.getElementById('addItemBtn');
             const addBtnText = document.getElementById('addItemBtnText');
 
-            const activeClass = "px-5 py-2 rounded-lg text-xs font-bold bg-white text-brand-600 shadow-md transition";
-            const inactiveClass = "px-5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition";
+            const activeClass = "flex-1 sm:flex-none px-3 sm:px-5 py-2 rounded-lg text-xs font-bold bg-white text-brand-600 shadow-md transition text-center";
+            const inactiveClass = "flex-1 sm:flex-none px-3 sm:px-5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition text-center";
 
             btnTasks.className = tab === 'tasks' ? activeClass : inactiveClass;
             btnHotels.className = tab === 'hotels' ? activeClass : inactiveClass;
@@ -649,7 +642,7 @@
                 addBtnText.innerText = '新規タスク追加';
             } else if (tab === 'hotels') {
                 addBtn.style.display = 'flex';
-                addBtnText.innerText = '新規企業・ホテル追加';
+                addBtnText.innerText = '新規企業追加';
             } else {
                 addBtn.style.display = 'none';
             }
@@ -671,129 +664,123 @@
         /* 📋 タスク管理ビュー */
         function renderTasksView(container) {
             if (!currentState.tasks || currentState.tasks.length === 0) {
-                container.innerHTML = `<p class="text-center py-12 text-sm text-slate-400">表示できるタスクはありません（ログインが必要です）</p>`;
+                container.innerHTML = `<p class="text-center py-10 text-xs sm:text-sm text-slate-400">表示できるタスクはありません（ログインが必要です）</p>`;
                 return;
             }
 
             container.innerHTML = `
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead>
-                            <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
-                                <th class="py-3.5 px-4">タスク名</th>
-                                <th class="py-3.5 px-4">担当者</th>
-                                <th class="py-3.5 px-4">詳細・メモ</th>
-                                <th class="py-3.5 px-4">期限</th>
-                                <th class="py-3.5 px-4">ステータス</th>
-                                <th class="py-3.5 px-4 text-right">操作</th>
+                <table class="w-full text-left text-xs whitespace-nowrap min-w-[600px]">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
+                            <th class="py-3 px-3">タスク名</th>
+                            <th class="py-3 px-3">担当者</th>
+                            <th class="py-3 px-3">詳細・メモ</th>
+                            <th class="py-3 px-3">期限</th>
+                            <th class="py-3 px-3">ステータス</th>
+                            <th class="py-3 px-3 text-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        ${currentState.tasks.map(t => `
+                            <tr class="hover:bg-slate-50/80 transition">
+                                <td class="py-3 px-3 font-bold text-slate-900">${escapeHtml(t.title)}</td>
+                                <td class="py-3 px-3 text-slate-600 font-medium">${escapeHtml(t.team_assignee || t.assignee || t.team || '-')}</td>
+                                <td class="py-3 px-3 text-slate-500 max-w-[150px] truncate">${escapeHtml(t.description || t.detail || '-')}</td>
+                                <td class="py-3 px-3 text-slate-500 font-mono">${escapeHtml(t.due)}</td>
+                                <td class="py-3 px-3">
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold ${getStatusBadgeClass(t.status)}">
+                                        ${escapeHtml(t.status)}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-3 text-right space-x-2">
+                                    <button onclick="openEditTaskModal('${t.id}')" class="text-slate-400 hover:text-brand-600 transition p-1">
+                                        <i data-lucide="edit-3" class="w-4 h-4 inline"></i>
+                                    </button>
+                                    <button onclick="deleteItem('tasks', '${t.id}')" class="text-slate-400 hover:text-rose-600 transition p-1">
+                                        <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                                    </button>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 text-slate-700">
-                            ${currentState.tasks.map(t => `
-                                <tr class="hover:bg-slate-50/80 transition">
-                                    <td class="py-3.5 px-4 font-bold text-slate-900">${escapeHtml(t.title)}</td>
-                                    <td class="py-3.5 px-4 text-slate-600 font-medium">${escapeHtml(t.team_assignee || t.assignee || t.team || '-')}</td>
-                                    <td class="py-3.5 px-4 text-slate-500 max-w-xs truncate">${escapeHtml(t.description || t.detail || '-')}</td>
-                                    <td class="py-3.5 px-4 text-slate-500 font-mono">${escapeHtml(t.due)}</td>
-                                    <td class="py-3.5 px-4">
-                                        <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold ${getStatusBadgeClass(t.status)}">
-                                            ${escapeHtml(t.status)}
-                                        </span>
-                                    </td>
-                                    <td class="py-3.5 px-4 text-right space-x-3">
-                                        <button onclick="openEditTaskModal('${t.id}')" class="text-slate-400 hover:text-brand-600 transition">
-                                            <i data-lucide="edit-3" class="w-4 h-4 inline"></i>
-                                        </button>
-                                        <button onclick="deleteItem('tasks', '${t.id}')" class="text-slate-400 hover:text-rose-600 transition">
-                                            <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
+                        `).join('')}
+                    </tbody>
+                </table>
             `;
         }
 
         /* 🏨 交渉・企業管理ビュー */
         function renderHotelsView(container) {
             if (!currentState.hotels || currentState.hotels.length === 0) {
-                container.innerHTML = `<p class="text-center py-12 text-sm text-slate-400">表示できるホテル・企業データはありません（ログインが必要です）</p>`;
+                container.innerHTML = `<p class="text-center py-10 text-xs sm:text-sm text-slate-400">表示できるホテル・企業データはありません（ログインが必要です）</p>`;
                 return;
             }
 
             container.innerHTML = `
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead>
-                            <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
-                                <th class="py-3.5 px-4">施設・企業名</th>
-                                <th class="py-3.5 px-4">先方担当者</th>
-                                <th class="py-3.5 px-4">自社担当者</th>
-                                <th class="py-3.5 px-4">エリア / 所在地</th>
-                                <th class="py-3.5 px-4">詳細・メモ</th>
-                                <th class="py-3.5 px-4">ステータス</th>
-                                <th class="py-3.5 px-4 text-right">操作</th>
+                <table class="w-full text-left text-xs whitespace-nowrap min-w-[680px]">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
+                            <th class="py-3 px-3">施設・企業名</th>
+                            <th class="py-3 px-3">先方担当者</th>
+                            <th class="py-3 px-3">自社担当者</th>
+                            <th class="py-3 px-3">エリア / 所在地</th>
+                            <th class="py-3 px-3">詳細・メモ</th>
+                            <th class="py-3 px-3">ステータス</th>
+                            <th class="py-3 px-3 text-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        ${currentState.hotels.map(h => `
+                            <tr class="hover:bg-slate-50/80 transition">
+                                <td class="py-3 px-3 font-bold text-slate-900">${escapeHtml(h.name)}</td>
+                                <td class="py-3 px-3 text-slate-600 font-medium">${escapeHtml(h.contact_person || '-')}</td>
+                                <td class="py-3 px-3 text-slate-600">${escapeHtml(h.our_assignee || '-')}</td>
+                                <td class="py-3 px-3 text-slate-500">${escapeHtml(h.area || h.location || '-')}</td>
+                                <td class="py-3 px-3 text-slate-500 max-w-[150px] truncate">${escapeHtml(h.notes || h.description || '-')}</td>
+                                <td class="py-3 px-3">
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold ${getStatusBadgeClass(h.status)}">
+                                        ${escapeHtml(h.status)}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-3 text-right space-x-2">
+                                    <button onclick="openEditHotelModal('${h.id}')" class="text-slate-400 hover:text-brand-600 transition p-1">
+                                        <i data-lucide="edit-3" class="w-4 h-4 inline"></i>
+                                    </button>
+                                    <button onclick="deleteItem('hotels', '${h.id}')" class="text-slate-400 hover:text-rose-600 transition p-1">
+                                        <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                                    </button>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 text-slate-700">
-                            ${currentState.hotels.map(h => `
-                                <tr class="hover:bg-slate-50/80 transition">
-                                    <td class="py-3.5 px-4 font-bold text-slate-900">${escapeHtml(h.name)}</td>
-                                    <td class="py-3.5 px-4 text-slate-600 font-medium">${escapeHtml(h.contact_person || '-')}</td>
-                                    <td class="py-3.5 px-4 text-slate-600">${escapeHtml(h.our_assignee || '-')}</td>
-                                    <td class="py-3.5 px-4 text-slate-500">${escapeHtml(h.area || h.location || '-')}</td>
-                                    <td class="py-3.5 px-4 text-slate-500 max-w-xs truncate">${escapeHtml(h.notes || h.description || '-')}</td>
-                                    <td class="py-3.5 px-4">
-                                        <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold ${getStatusBadgeClass(h.status)}">
-                                            ${escapeHtml(h.status)}
-                                        </span>
-                                    </td>
-                                    <td class="py-3.5 px-4 text-right space-x-3">
-                                        <button onclick="openEditHotelModal('${h.id}')" class="text-slate-400 hover:text-brand-600 transition">
-                                            <i data-lucide="edit-3" class="w-4 h-4 inline"></i>
-                                        </button>
-                                        <button onclick="deleteItem('hotels', '${h.id}')" class="text-slate-400 hover:text-rose-600 transition">
-                                            <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
+                        `).join('')}
+                    </tbody>
+                </table>
             `;
         }
 
         /* 📜 操作ログビュー */
         function renderLogsView(container) {
             if (!currentState.logs || currentState.logs.length === 0) {
-                container.innerHTML = `<p class="text-center py-12 text-sm text-slate-400">操作ログデータはありません</p>`;
+                container.innerHTML = `<p class="text-center py-10 text-xs sm:text-sm text-slate-400">操作ログデータはありません</p>`;
                 return;
             }
 
             container.innerHTML = `
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead>
-                            <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
-                                <th class="py-3.5 px-4">日時</th>
-                                <th class="py-3.5 px-4">ユーザー名</th>
-                                <th class="py-3.5 px-4">認証種別 / 操作内容</th>
+                <table class="w-full text-left text-xs whitespace-nowrap min-w-[480px]">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
+                            <th class="py-3 px-3">日時</th>
+                            <th class="py-3 px-3">ユーザー名</th>
+                            <th class="py-3 px-3">認証種別 / 操作内容</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        ${currentState.logs.map(l => `
+                            <tr class="hover:bg-slate-50/80 transition">
+                                <td class="py-3 px-3 text-slate-500 font-mono">${escapeHtml(l.created_at || l.timestamp || '-')}</td>
+                                <td class="py-3 px-3 font-bold text-slate-900">${escapeHtml(l.user_name || '不明')}</td>
+                                <td class="py-3 px-3 text-slate-600">${escapeHtml(l.login_type || l.action || '-')}</td>
                             </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 text-slate-700">
-                            ${currentState.logs.map(l => `
-                                <tr class="hover:bg-slate-50/80 transition">
-                                    <td class="py-3.5 px-4 text-slate-500 font-mono">${escapeHtml(l.created_at || l.timestamp || '-')}</td>
-                                    <td class="py-3.5 px-4 font-bold text-slate-900">${escapeHtml(l.user_name || '不明')}</td>
-                                    <td class="py-3.5 px-4 text-slate-600">${escapeHtml(l.login_type || l.action || '-')}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
+                        `).join('')}
+                    </tbody>
+                </table>
             `;
         }
 
