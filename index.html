@@ -14,6 +14,9 @@
   <!-- LINE LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>
 
+  <!-- Google Identity Services (GIS) SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   
@@ -48,7 +51,7 @@
 </head>
 <body class="crystal-bg text-slate-800 antialiased min-h-screen relative overflow-x-hidden">
 
-  <!-- 🔒 認証オーバーレイ（LINE連携 / 管理者ログイン） -->
+  <!-- 🔒 認証オーバーレイ（LINE / Google / 管理者） -->
   <div id="auth-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all">
     <div class="crystal-card p-6 sm:p-8 rounded-3xl max-w-md w-full text-center space-y-6 shadow-2xl relative overflow-hidden">
       
@@ -64,9 +67,10 @@
       </div>
 
       <!-- モード切り替えタブ -->
-      <div class="flex p-1 bg-slate-100/80 rounded-xl text-xs font-bold border border-slate-200/60">
-        <button id="tab-btn-line" onclick="switchAuthTab('line')" class="flex-1 py-2 rounded-lg bg-white shadow-sm text-slate-800 transition-all">LINE連携ログイン</button>
-        <button id="tab-btn-admin" onclick="switchAuthTab('admin')" class="flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition-all">管理者ID/Pass</button>
+      <div class="flex p-1 bg-slate-100/80 rounded-xl text-[11px] font-bold border border-slate-200/60">
+        <button id="tab-btn-line" onclick="switchAuthTab('line')" class="flex-1 py-2 rounded-lg bg-white shadow-sm text-slate-800 transition-all">LINE</button>
+        <button id="tab-btn-google" onclick="switchAuthTab('google')" class="flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition-all">Google</button>
+        <button id="tab-btn-admin" onclick="switchAuthTab('admin')" class="flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition-all">管理者</button>
       </div>
 
       <!-- LINEログインパネル -->
@@ -76,6 +80,26 @@
           <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 5.82 2 10.53c0 4.23 3.6 7.78 8.46 8.41.33.07.78.22.89.5.1.26.07.67.03.93-.05.35-.23 1.39-.26 1.69-.05.47.22.92.71.5.49-.42 5.25-3.1 7.18-5.3C20.8 15.02 22 12.92 22 10.53 22 5.82 17.52 2 12 2z"/></svg>
           LINEでログイン
         </button>
+      </div>
+
+      <!-- Googleログインパネル -->
+      <div id="panel-google" class="space-y-4 hidden">
+        <p class="text-xs text-slate-600 leading-relaxed">Googleアカウントを使用してログインします。</p>
+        <div id="g_id_onload"
+             data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+             data-callback="handleGoogleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+        <div class="flex justify-center">
+          <div class="g_id_signin"
+               data-type="standard"
+               data-size="large"
+               data-theme="outline"
+               data-text="sign_in_with"
+               data-shape="rectangular"
+               data-logo_alignment="left">
+          </div>
+        </div>
       </div>
 
       <!-- 管理者ID/Passログインパネル -->
@@ -257,10 +281,24 @@
     let userLogs = [];
     let editingItemId = null;
 
-    // --- ① 認証処理 & LINE LIFF 安全初期化 ---
+    // JWTデコード用ヘルパー関数
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // --- ① 認証処理 & タブ切り替え ---
     async function initLiff() {
       if (typeof liff === 'undefined') {
-        console.warn("LINE LIFF SDK が読み込めない環境のため、管理者ログインをご利用ください。");
+        console.warn("LINE LIFF SDK が読み込めない環境です。");
         return;
       }
 
@@ -283,31 +321,52 @@
     }
 
     function switchAuthTab(type) {
-      const lineTab = document.getElementById('tab-btn-line');
-      const adminTab = document.getElementById('tab-btn-admin');
-      const linePanel = document.getElementById('panel-line');
-      const adminPanel = document.getElementById('panel-admin');
+      const tabs = {
+        line: document.getElementById('tab-btn-line'),
+        google: document.getElementById('tab-btn-google'),
+        admin: document.getElementById('tab-btn-admin')
+      };
+      const panels = {
+        line: document.getElementById('panel-line'),
+        google: document.getElementById('panel-google'),
+        admin: document.getElementById('panel-admin')
+      };
 
-      if (type === 'line') {
-        lineTab.className = "flex-1 py-2 rounded-lg bg-white shadow-sm text-slate-800 transition-all";
-        adminTab.className = "flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition-all";
-        linePanel.classList.remove('hidden');
-        adminPanel.classList.add('hidden');
-      } else {
-        adminTab.className = "flex-1 py-2 rounded-lg bg-white shadow-sm text-slate-800 transition-all";
-        lineTab.className = "flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition-all";
-        adminPanel.classList.remove('hidden');
-        linePanel.classList.add('hidden');
-      }
+      Object.keys(tabs).forEach(k => {
+        if (k === type) {
+          tabs[k].className = "flex-1 py-2 rounded-lg bg-white shadow-sm text-slate-800 transition-all font-bold";
+          panels[k].classList.remove('hidden');
+        } else {
+          tabs[k].className = "flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition-all";
+          panels[k].classList.add('hidden');
+        }
+      });
     }
 
     function loginWithLine() {
       if (typeof liff === 'undefined') {
-        showAuthError("LINE SDKがブロックされています。管理者ID/Passタブからログインしてください。");
+        showAuthError("LINE SDKが読み込まれていません。Googleまたは管理者ログインをご利用ください。");
         return;
       }
       if (!liff.isLoggedIn()) {
         liff.login();
+      }
+    }
+
+    // Google サインインレスポンスハンドラ
+    async function handleGoogleCredentialResponse(response) {
+      try {
+        const token = `GOOGLE_TOKEN:${response.credential}`;
+        const payload = parseJwt(response.credential);
+        const userName = payload ? payload.name : 'Google User';
+        const pictureUrl = payload ? payload.picture : '';
+
+        currentAuthHeader = token;
+        await recordLogin(userName, 'GOOGLE', pictureUrl, token);
+        setSessionAuth(token, 'GOOGLE', userName, pictureUrl);
+        await fetchDashboardData();
+      } catch (err) {
+        showAuthError("Google認証エラーが発生しました");
       }
     }
 
@@ -516,10 +575,11 @@
       }
 
       const rowsHtml = userLogs.map(log => {
-        const isLine = log.login_type === 'LINE';
-        const badgeColor = isLine 
-          ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
-          : 'bg-indigo-100 text-indigo-700 border-indigo-200';
+        let badgeColor = 'bg-slate-100 text-slate-700 border-slate-200';
+        if (log.login_type === 'LINE') badgeColor = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+        if (log.login_type === 'GOOGLE') badgeColor = 'bg-rose-100 text-rose-700 border-rose-200';
+        if (log.login_type === 'ADMIN') badgeColor = 'bg-indigo-100 text-indigo-700 border-indigo-200';
+
         const avatar = log.picture_url 
           ? `<img src="${log.picture_url}" class="w-5 h-5 rounded-full border border-slate-200 object-cover">` 
           : `<div class="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-600">${log.user_name ? log.user_name.charAt(0) : 'U'}</div>`;
