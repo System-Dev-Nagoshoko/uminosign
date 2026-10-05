@@ -2,13 +2,11 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 固定幅デザイン（レスポンシブ非対応指定） -->
+    <meta name="viewport" content="width=1280">
     <title>海のサインプロジェクト - 管理ダッシュボード</title>
 
-    <!-- ファビコンエラー防止 -->
     <link rel="icon" href="data:,">
-
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -28,143 +26,216 @@
             }
         }
     </script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <!-- Google Identity Services SDK -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
+        /* レスポンシブ非対応用の固定幅コンテナ */
+        .fixed-layout {
+            width: 1200px;
+            min-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 🌈 背景グラデーションアニメーション */
         body {
-            background-color: #f8fafc;
+            background: linear-gradient(-45deg, #0c4a6e, #075985, #0284c7, #1e293b, #0f172a);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             color: #0f172a;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: auto; /* スマホ等では横スクロールさせる */
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 💎 浮遊する背景オブジェクト (Keyframes) */
+        .bg-shape {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.6;
+            filter: blur(1px);
+        }
+
+        /* クリスタル（菱形） */
+        .crystal {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(56,189,248,0.3));
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            backdrop-filter: blur(4px);
+            box-shadow: 0 8px 32px 0 rgba(0, 191, 255, 0.37);
+        }
+
+        /* 浮遊キーフレームアニメーション */
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+            50% { transform: translateY(-25px) rotate(15deg) scale(1.05); }
+        }
+
+        @keyframes floatFast {
+            0%, 100% { transform: translateY(0px) rotate(45deg) scale(1); }
+            50% { transform: translateY(-40px) rotate(60deg) scale(1.1); }
+        }
+
+        @keyframes floatReverse {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(30px) rotate(-20deg); }
+        }
+
+        .anim-float-1 { animation: floatSlow 8s ease-in-out infinite; }
+        .anim-float-2 { animation: floatFast 6s ease-in-out infinite; }
+        .anim-float-3 { animation: floatReverse 10s ease-in-out infinite; }
+
+        /* ガラスモーフィズム風 UI */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between">
+<body class="flex flex-col justify-between">
+
+    <!-- 🔮 背景浮遊オブジェクト（クリスタル・図形） -->
+    <div class="bg-shape crystal anim-float-1" style="top: 10%; left: 5%; width: 60px; height: 60px;"></div>
+    <div class="bg-shape crystal anim-float-2" style="top: 60%; left: 8%; width: 40px; height: 40px;"></div>
+    <div class="bg-shape crystal anim-float-3" style="top: 20%; right: 7%; width: 80px; height: 80px;"></div>
+    <div class="bg-shape crystal anim-float-1" style="bottom: 15%; right: 12%; width: 50px; height: 50px;"></div>
+    
+    <!-- 丸型・グラデーションオブジェクト -->
+    <div class="bg-shape rounded-full bg-gradient-to-r from-cyan-400/30 to-blue-600/30 anim-float-3" style="top: 40%; left: 85%; width: 120px; height: 120px; filter: blur(20px);"></div>
+    <div class="bg-shape rounded-full bg-gradient-to-r from-teal-300/30 to-sky-500/30 anim-float-2" style="bottom: 10%; left: 20%; width: 160px; height: 160px; filter: blur(25px);"></div>
+
 
     <!-- 🌐 HEADER -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
-            <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
-                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white shadow-sm">
-                    <i data-lucide="waves" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+    <header class="glass-panel sticky top-0 z-30 shadow-md">
+        <div class="fixed-layout h-16 flex items-center justify-between px-4">
+            <div class="flex items-center space-x-3 shrink-0">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center text-white shadow-lg">
+                    <i data-lucide="waves" class="w-6 h-6"></i>
                 </div>
-                <span class="font-bold text-sm sm:text-lg text-slate-800 tracking-tight leading-tight truncate">
-                    海のサイン<span class="hidden sm:inline">プロジェクト</span>
+                <span class="font-bold text-xl text-slate-800 tracking-tight">
+                    海のサインプロジェクト <span class="text-xs text-brand-600 font-normal border border-brand-200 bg-brand-50 px-2 py-0.5 rounded-full">Dashboard</span>
                 </span>
             </div>
 
-            <div class="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
-                <div class="flex items-center space-x-1.5 bg-slate-100 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full border border-slate-200">
-                    <img id="userAvatar" src="https://placehold.co/80x80/0284c7/ffffff?text=U" alt="Avatar" class="w-5 h-5 sm:w-7 sm:h-7 rounded-full object-cover">
+            <div class="flex items-center space-x-4 shrink-0">
+                <div class="flex items-center space-x-2 bg-slate-100/80 px-3 py-1.5 rounded-full border border-slate-200/80 shadow-inner">
+                    <img id="userAvatar" src="https://placehold.co/80x80/0284c7/ffffff?text=U" alt="Avatar" class="w-7 h-7 rounded-full object-cover">
                     <div class="text-left">
-                        <div id="userName" class="text-[11px] sm:text-xs font-semibold text-slate-700 max-w-[70px] sm:max-w-[120px] truncate">ゲスト</div>
+                        <div id="userName" class="text-xs font-semibold text-slate-700 max-w-[120px] truncate">ゲスト</div>
                     </div>
-                    <span id="roleBadge" class="text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 uppercase">GUEST</span>
+                    <span id="roleBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 uppercase">GUEST</span>
                 </div>
 
-                <button id="authBtn" onclick="toggleAuthAction()" class="px-2.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium flex items-center space-x-1 transition shadow-sm">
-                    <i id="authBtnIcon" data-lucide="log-in" class="w-3.5 h-3.5"></i>
-                    <span id="authBtnText" class="hidden sm:inline">ログイン</span>
+                <button id="authBtn" onclick="toggleAuthAction()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-sky-500 hover:from-brand-700 hover:to-sky-600 text-white text-xs font-semibold flex items-center space-x-1.5 transition shadow-md">
+                    <i id="authBtnIcon" data-lucide="log-in" class="w-4 h-4"></i>
+                    <span id="authBtnText">ログイン</span>
                 </button>
             </div>
         </div>
     </header>
 
     <!-- 📊 MAIN CONTAINER -->
-    <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex-1 w-full space-y-4 sm:space-y-6">
+    <main class="fixed-layout py-8 flex-1 w-full space-y-6 relative z-10">
         
         <!-- Status Overview Cards -->
-        <div class="grid grid-cols-3 gap-2 sm:gap-4">
-            <div class="bg-white p-2.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1">
+        <div class="grid grid-cols-3 gap-6">
+            <div class="glass-panel p-5 rounded-2xl shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-[9px] sm:text-[11px] font-medium text-slate-400 uppercase tracking-wider">認証状態</p>
-                    <p id="authSource" class="text-[11px] sm:text-sm font-semibold text-slate-600 mt-0.5 flex items-center gap-1">
-                        <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-400 inline-block shrink-0"></span> <span class="truncate">未認証</span>
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">認証状態</p>
+                    <p id="authSource" class="text-base font-bold text-slate-700 mt-1 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block shrink-0"></span> 未認証
                     </p>
                 </div>
-                <div class="p-1.5 sm:p-2.5 bg-slate-50 text-slate-500 rounded-lg border border-slate-100 hidden sm:block">
-                    <i data-lucide="shield-check" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                <div class="p-3 bg-brand-50 text-brand-600 rounded-xl border border-brand-100">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
                 </div>
             </div>
 
-            <div class="bg-white p-2.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1">
+            <div class="glass-panel p-5 rounded-2xl shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-[9px] sm:text-[11px] font-medium text-slate-400 uppercase tracking-wider">権限</p>
-                    <p id="statRoleText" class="text-[11px] sm:text-sm font-semibold text-slate-700 mt-0.5 truncate">一般</p>
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">アクセス権限</p>
+                    <p id="statRoleText" class="text-base font-bold text-slate-700 mt-1">一般</p>
                 </div>
-                <div class="p-1.5 sm:p-2.5 bg-slate-50 text-slate-500 rounded-lg border border-slate-100 hidden sm:block">
-                    <i data-lucide="key-round" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                <div class="p-3 bg-brand-50 text-brand-600 rounded-xl border border-brand-100">
+                    <i data-lucide="key-round" class="w-6 h-6"></i>
                 </div>
             </div>
 
-            <div class="bg-white p-2.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1">
+            <div class="glass-panel p-5 rounded-2xl shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-[9px] sm:text-[11px] font-medium text-slate-400 uppercase tracking-wider">DB接続</p>
-                    <p id="apiStatusText" class="text-[11px] sm:text-sm font-semibold text-slate-700 mt-0.5 truncate">確認中...</p>
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">DB接続状況</p>
+                    <p id="apiStatusText" class="text-base font-bold text-slate-700 mt-1">確認中...</p>
                 </div>
-                <div class="p-1.5 sm:p-2.5 bg-slate-50 text-slate-500 rounded-lg border border-slate-100 hidden sm:block">
-                    <i data-lucide="database" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                <div class="p-3 bg-brand-50 text-brand-600 rounded-xl border border-brand-100">
+                    <i data-lucide="database" class="w-6 h-6"></i>
                 </div>
             </div>
         </div>
 
         <!-- Controls & Data Section -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3 sm:p-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+        <div class="glass-panel rounded-2xl shadow-xl p-6">
+            <div class="flex items-center justify-between gap-4 mb-6">
                 <!-- Navigation Tabs -->
-                <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200 w-full sm:w-auto overflow-x-auto">
-                    <button id="tabTasksBtn" onclick="switchDataTab('tasks')" class="flex-1 sm:flex-none text-center px-2.5 sm:px-4 py-1.5 rounded-md text-xs font-semibold bg-white text-brand-600 shadow-sm transition whitespace-nowrap">
+                <div class="flex bg-slate-200/60 p-1.5 rounded-xl border border-slate-300/50">
+                    <button id="tabTasksBtn" onclick="switchDataTab('tasks')" class="px-5 py-2 rounded-lg text-xs font-bold bg-white text-brand-600 shadow-md transition">
                         タスク管理
                     </button>
-                    <button id="tabHotelsBtn" onclick="switchDataTab('hotels')" class="flex-1 sm:flex-none text-center px-2.5 sm:px-4 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition whitespace-nowrap">
+                    <button id="tabHotelsBtn" onclick="switchDataTab('hotels')" class="px-5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition">
                         交渉・企業管理
                     </button>
-                    <button id="tabLogsBtn" onclick="switchDataTab('logs')" class="flex-1 sm:flex-none text-center px-2.5 sm:px-4 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition whitespace-nowrap">
+                    <button id="tabLogsBtn" onclick="switchDataTab('logs')" class="px-5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition">
                         操作ログ
                     </button>
                 </div>
 
                 <!-- Add Button -->
-                <button id="addItemBtn" onclick="openCreateModal()" class="w-full sm:w-auto px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-sm shrink-0">
+                <button id="addItemBtn" onclick="openCreateModal()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-cyan-600 hover:from-brand-700 hover:to-cyan-700 text-white text-xs font-bold flex items-center space-x-2 transition shadow-lg shrink-0">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     <span id="addItemBtnText">新規タスク追加</span>
                 </button>
             </div>
 
             <!-- DATA CONTAINER -->
-            <div id="dataContainer"></div>
+            <div id="dataContainer" class="min-h-[300px]"></div>
         </div>
     </main>
 
     <!-- 🔐 LOGIN MODAL -->
-    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm hidden">
-        <div class="bg-white w-full max-w-sm rounded-xl p-5 sm:p-6 border border-slate-200 shadow-xl relative">
+    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md hidden">
+        <div class="bg-white/95 w-[380px] rounded-2xl p-6 border border-white/50 shadow-2xl relative">
             <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
 
-            <h3 class="text-base font-bold text-slate-800 mb-1">システムログイン</h3>
-            <p class="text-xs text-slate-500 mb-5">ご利用のアカウントを選択してください。</p>
+            <h3 class="text-lg font-bold text-slate-800 mb-1">システムログイン</h3>
+            <p class="text-xs text-slate-500 mb-6">ご利用のアカウントで認証を行ってください。</p>
 
-            <div class="space-y-3">
+            <div class="space-y-4">
                 <div class="flex justify-center w-full">
                     <div id="g_id_signin_btn" class="w-full flex justify-center"></div>
                 </div>
 
-                <button onclick="loginWithLine()" class="w-full py-2.5 rounded-lg bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs flex items-center justify-center space-x-2 transition shadow-sm">
+                <button onclick="loginWithLine()" class="w-full py-2.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs flex items-center justify-center space-x-2 transition shadow-md">
                     <i data-lucide="message-square" class="w-4 h-4"></i>
                     <span>LINEでログイン</span>
                 </button>
 
-                <div class="pt-2 border-t border-slate-100">
-                    <p class="text-[11px] text-slate-500 mb-2">管理者用パスコード</p>
+                <div class="pt-3 border-t border-slate-200">
+                    <p class="text-[11px] font-medium text-slate-500 mb-2">管理者用パスコード</p>
                     <div class="flex gap-2">
-                        <input type="password" id="adminPasscodeInput" placeholder="パスコード" class="flex-1 p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                        <button onclick="loginWithAdminPasscode()" class="px-3 py-2 bg-slate-800 text-white text-xs font-semibold rounded-lg hover:bg-slate-900 transition shrink-0">
+                        <input type="password" id="adminPasscodeInput" placeholder="パスコードを入力" class="flex-1 p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <button onclick="loginWithAdminPasscode()" class="px-4 py-2.5 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-900 transition shrink-0">
                             認証
                         </button>
                     </div>
@@ -174,34 +245,34 @@
     </div>
 
     <!-- 📝 CRUD MODAL -->
-    <div id="dataModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-sm hidden">
-        <div class="bg-white w-full max-w-md rounded-xl p-5 sm:p-6 border border-slate-200 shadow-xl relative max-h-[85vh] flex flex-col">
+    <div id="dataModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md hidden">
+        <div class="bg-white/95 w-[480px] rounded-2xl p-6 border border-white/50 shadow-2xl relative max-h-[85vh] flex flex-col">
             <button onclick="closeDataModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
 
-            <h3 id="modalFormTitle" class="text-base font-bold text-slate-800 mb-4 shrink-0">データ編集</h3>
+            <h3 id="modalFormTitle" class="text-lg font-bold text-slate-800 mb-4 shrink-0">データ編集</h3>
 
-            <form id="dataForm" onsubmit="handleFormSubmit(event)" class="space-y-3 overflow-y-auto pr-1 flex-1">
+            <form id="dataForm" onsubmit="handleFormSubmit(event)" class="space-y-4 overflow-y-auto pr-1 flex-1">
                 <input type="hidden" id="formItemType">
                 <input type="hidden" id="formItemId">
 
-                <div id="formFieldsContainer" class="space-y-3"></div>
+                <div id="formFieldsContainer" class="space-y-4"></div>
 
-                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100 sticky bottom-0 bg-white">
-                    <button type="button" onclick="closeDataModal()" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-600 text-xs hover:bg-slate-50">
+                <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200 sticky bottom-0 bg-white/95">
+                    <button type="button" onclick="closeDataModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 text-xs font-semibold hover:bg-slate-50">
                         キャンセル
                     </button>
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm">
-                        保存
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-sky-600 text-white text-xs font-bold shadow-md hover:from-brand-700 hover:to-sky-700">
+                        保存する
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <footer class="bg-white border-t border-slate-200 py-3 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 text-center text-[11px] sm:text-xs text-slate-400">
+    <footer class="bg-slate-900/40 border-t border-white/10 py-4 mt-auto relative z-10 backdrop-blur-sm">
+        <div class="fixed-layout text-center text-xs text-slate-300/80">
             &copy; 海のサインプロジェクト Dashboard System
         </div>
     </footer>
@@ -249,6 +320,25 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+        function getStatusBadgeClass(status) {
+            switch (status) {
+                case '完了':
+                case '合意':
+                    return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+                case '進行中':
+                case '交渉中':
+                    return 'bg-sky-100 text-sky-700 border border-sky-200';
+                case '未着手':
+                case 'アプローチ前':
+                    return 'bg-slate-100 text-slate-600 border border-slate-200';
+                case '保留':
+                case '見送り':
+                    return 'bg-amber-100 text-amber-700 border border-amber-200';
+                default:
+                    return 'bg-slate-100 text-slate-600 border border-slate-200';
+            }
         }
 
         function initGoogleAuth() {
@@ -483,7 +573,7 @@
                 roleBadgeEl.innerText = currentState.user.role || 'USER';
 
                 const authLabel = currentState.authType === 'google' ? 'Google' : currentState.authType === 'line' ? 'LINE' : 'パスコード';
-                authSourceEl.innerHTML = `<span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 inline-block shrink-0"></span> <span class="truncate">${authLabel} 認証済</span>`;
+                authSourceEl.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shrink-0"></span> ${authLabel} 認証済`;
                 statRoleTextEl.innerText = currentState.user.role === 'ADMIN' ? '管理者' : '一般';
 
                 authBtnText.innerText = "ログアウト";
@@ -493,7 +583,7 @@
                 userAvatarEl.src = 'https://placehold.co/80x80/0284c7/ffffff?text=U';
                 roleBadgeEl.innerText = 'GUEST';
 
-                authSourceEl.innerHTML = `<span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-400 inline-block shrink-0"></span> <span class="truncate">未認証</span>`;
+                authSourceEl.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block shrink-0"></span> 未認証`;
                 statRoleTextEl.innerText = '一般';
 
                 authBtnText.innerText = "ログイン";
@@ -535,6 +625,34 @@
             renderDashboardData();
         }
 
+        function switchDataTab(tab) {
+            currentState.activeTab = tab;
+            const btnTasks = document.getElementById('tabTasksBtn');
+            const btnHotels = document.getElementById('tabHotelsBtn');
+            const btnLogs = document.getElementById('tabLogsBtn');
+            const addBtn = document.getElementById('addItemBtn');
+            const addBtnText = document.getElementById('addItemBtnText');
+
+            const activeClass = "px-5 py-2 rounded-lg text-xs font-bold bg-white text-brand-600 shadow-md transition";
+            const inactiveClass = "px-5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition";
+
+            btnTasks.className = tab === 'tasks' ? activeClass : inactiveClass;
+            btnHotels.className = tab === 'hotels' ? activeClass : inactiveClass;
+            btnLogs.className = tab === 'logs' ? activeClass : inactiveClass;
+
+            if (tab === 'tasks') {
+                addBtn.style.display = 'flex';
+                addBtnText.innerText = '新規タスク追加';
+            } else if (tab === 'hotels') {
+                addBtn.style.display = 'flex';
+                addBtnText.innerText = '新規企業・ホテル追加';
+            } else {
+                addBtn.style.display = 'none';
+            }
+
+            renderDashboardData();
+        }
+
         function renderDashboardData() {
             const container = document.getElementById('dataContainer');
             const tab = currentState.activeTab;
@@ -546,44 +664,43 @@
             lucide.createIcons();
         }
 
-        /* 📋 タスク管理ビュー（スマホ：カード型 / PC：テーブル） */
+        /* 📋 タスク管理ビュー (固定テーブル) */
         function renderTasksView(container) {
             if (!currentState.tasks || currentState.tasks.length === 0) {
-                container.innerHTML = `<p class="text-center py-8 text-xs text-slate-400">表示できるタスクはありません（ログインが必要です）</p>`;
+                container.innerHTML = `<p class="text-center py-12 text-sm text-slate-400">表示できるタスクはありません（ログインが必要です）</p>`;
                 return;
             }
 
             container.innerHTML = `
-                <!-- PC用テーブル表示 -->
-                <div class="hidden md:block overflow-x-auto">
+                <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead>
                             <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
-                                <th class="py-3 px-3">タスク名</th>
-                                <th class="py-3 px-3">担当者</th>
-                                <th class="py-3 px-3">詳細・メモ</th>
-                                <th class="py-3 px-3">期限</th>
-                                <th class="py-3 px-3">ステータス</th>
-                                <th class="py-3 px-3 text-right">操作</th>
+                                <th class="py-3.5 px-4">タスク名</th>
+                                <th class="py-3.5 px-4">担当者</th>
+                                <th class="py-3.5 px-4">詳細・メモ</th>
+                                <th class="py-3.5 px-4">期限</th>
+                                <th class="py-3.5 px-4">ステータス</th>
+                                <th class="py-3.5 px-4 text-right">操作</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             ${currentState.tasks.map(t => `
-                                <tr class="hover:bg-slate-50">
-                                    <td class="py-3 px-3 font-medium text-slate-900">${escapeHtml(t.title)}</td>
-                                    <td class="py-3 px-3 text-slate-600 font-medium">${escapeHtml(t.team_assignee || t.assignee || t.team || '-')}</td>
-                                    <td class="py-3 px-3 text-slate-500 max-w-xs truncate">${escapeHtml(t.description || t.detail || '-')}</td>
-                                    <td class="py-3 px-3 text-slate-500 font-mono">${escapeHtml(t.due)}</td>
-                                    <td class="py-3 px-3">
-                                        <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${getStatusBadgeClass(t.status)}">
+                                <tr class="hover:bg-slate-50/80 transition">
+                                    <td class="py-3.5 px-4 font-bold text-slate-900">${escapeHtml(t.title)}</td>
+                                    <td class="py-3.5 px-4 text-slate-600 font-medium">${escapeHtml(t.team_assignee || t.assignee || t.team || '-')}</td>
+                                    <td class="py-3.5 px-4 text-slate-500 max-w-xs truncate">${escapeHtml(t.description || t.detail || '-')}</td>
+                                    <td class="py-3.5 px-4 text-slate-500 font-mono">${escapeHtml(t.due)}</td>
+                                    <td class="py-3.5 px-4">
+                                        <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold ${getStatusBadgeClass(t.status)}">
                                             ${escapeHtml(t.status)}
                                         </span>
                                     </td>
-                                    <td class="py-3 px-3 text-right space-x-2">
-                                        <button onclick="openEditTaskModal('${t.id}')" class="text-slate-400 hover:text-brand-600">
+                                    <td class="py-3.5 px-4 text-right space-x-3">
+                                        <button onclick="openEditTaskModal('${t.id}')" class="text-slate-400 hover:text-brand-600 transition">
                                             <i data-lucide="edit-3" class="w-4 h-4 inline"></i>
                                         </button>
-                                        <button onclick="deleteItem('tasks', '${t.id}')" class="text-slate-400 hover:text-rose-600">
+                                        <button onclick="deleteItem('tasks', '${t.id}')" class="text-slate-400 hover:text-rose-600 transition">
                                             <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
                                         </button>
                                     </td>
@@ -591,76 +708,49 @@
                             `).join('')}
                         </tbody>
                     </table>
-                </div>
-
-                <!-- スマホ用カード型表示 -->
-                <div class="space-y-3 md:hidden">
-                    ${currentState.tasks.map(t => `
-                        <div class="p-3 bg-slate-50/80 rounded-lg border border-slate-200 text-xs space-y-2">
-                            <div class="flex items-start justify-between gap-2">
-                                <h4 class="font-bold text-slate-900 text-sm leading-snug">${escapeHtml(t.title)}</h4>
-                                <span class="shrink-0 inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${getStatusBadgeClass(t.status)}">
-                                    ${escapeHtml(t.status)}
-                                </span>
-                            </div>
-                            <div class="text-slate-600 space-y-1">
-                                <p><span class="text-slate-400">担当:</span> ${escapeHtml(t.team_assignee || t.assignee || t.team || '-')}</p>
-                                <p><span class="text-slate-400">期限:</span> <span class="font-mono">${escapeHtml(t.due)}</span></p>${t.description ? `<p class="text-slate-500 bg-white p-2 rounded border border-slate-100">${escapeHtml(t.description)}</p>` : ''}
-                            </div>
-                            <div class="flex justify-end gap-3 pt-2 border-t border-slate-200/60 text-slate-500">
-                                <button onclick="openEditTaskModal('${t.id}')" class="flex items-center gap-1 hover:text-brand-600">
-                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> 編集
-                                </button>
-                                <button onclick="deleteItem('tasks', '${t.id}')" class="flex items-center gap-1 hover:text-rose-600">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 削除
-                                </button>
-                            </div>
-                        </div>
-                    `).join('')}
                 </div>
             `;
         }
 
-        /* 🏨 交渉・企業管理ビュー（スマホ：カード型 / PC：テーブル） */
+        /* 🏨 交渉・企業管理ビュー (固定テーブル) */
         function renderHotelsView(container) {
             if (!currentState.hotels || currentState.hotels.length === 0) {
-                container.innerHTML = `<p class="text-center py-8 text-xs text-slate-400">表示できるホテル・企業データはありません（ログインが必要です）</p>`;
+                container.innerHTML = `<p class="text-center py-12 text-sm text-slate-400">表示できるホテル・企業データはありません（ログインが必要です）</p>`;
                 return;
             }
 
             container.innerHTML = `
-                <!-- PC用テーブル表示 -->
-                <div class="hidden md:block overflow-x-auto">
+                <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead>
                             <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
-                                <th class="py-3 px-3">施設・企業名</th>
-                                <th class="py-3 px-3">先方担当者</th>
-                                <th class="py-3 px-3">自社担当者</th>
-                                <th class="py-3 px-3">エリア / 所在地</th>
-                                <th class="py-3 px-3">詳細・メモ</th>
-                                <th class="py-3 px-3">ステータス</th>
-                                <th class="py-3 px-3 text-right">操作</th>
+                                <th class="py-3.5 px-4">施設・企業名</th>
+                                <th class="py-3.5 px-4">先方担当者</th>
+                                <th class="py-3.5 px-4">自社担当者</th>
+                                <th class="py-3.5 px-4">エリア / 所在地</th>
+                                <th class="py-3.5 px-4">詳細・メモ</th>
+                                <th class="py-3.5 px-4">ステータス</th>
+                                <th class="py-3.5 px-4 text-right">操作</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             ${currentState.hotels.map(h => `
-                                <tr class="hover:bg-slate-50">
-                                    <td class="py-3 px-3 font-medium text-slate-900">${escapeHtml(h.name)}</td>
-                                    <td class="py-3 px-3 text-slate-600 font-medium">${escapeHtml(h.contact_person || '-')}</td>
-                                    <td class="py-3 px-3 text-slate-600 font-medium">${escapeHtml(h.team_assignee || '-')}</td>
-                                    <td class="py-3 px-3 text-slate-500">${escapeHtml(h.location || '-')}</td>
-                                    <td class="py-3 px-3 text-slate-500 max-w-xs truncate">${escapeHtml(h.description || h.memo || '-')}</td>
-                                    <td class="py-3 px-3">
-                                        <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${getStatusBadgeClass(h.status)}">
+                                <tr class="hover:bg-slate-50/80 transition">
+                                    <td class="py-3.5 px-4 font-bold text-slate-900">${escapeHtml(h.name)}</td>
+                                    <td class="py-3.5 px-4 text-slate-600 font-medium">${escapeHtml(h.contact_person || '-')}</td>
+                                    <td class="py-3.5 px-4 text-slate-600">${escapeHtml(h.our_assignee || '-')}</td>
+                                    <td class="py-3.5 px-4 text-slate-500">${escapeHtml(h.area || h.location || '-')}</td>
+                                    <td class="py-3.5 px-4 text-slate-500 max-w-xs truncate">${escapeHtml(h.notes || h.description || '-')}</td>
+                                    <td class="py-3.5 px-4">
+                                        <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold ${getStatusBadgeClass(h.status)}">
                                             ${escapeHtml(h.status)}
                                         </span>
                                     </td>
-                                    <td class="py-3 px-3 text-right space-x-2">
-                                        <button onclick="openEditHotelModal('${h.id}')" class="text-slate-400 hover:text-brand-600">
+                                    <td class="py-3.5 px-4 text-right space-x-3">
+                                        <button onclick="openEditHotelModal('${h.id}')" class="text-slate-400 hover:text-brand-600 transition">
                                             <i data-lucide="edit-3" class="w-4 h-4 inline"></i>
                                         </button>
-                                        <button onclick="deleteItem('hotels', '${h.id}')" class="text-slate-400 hover:text-rose-600">
+                                        <button onclick="deleteItem('hotels', '${h.id}')" class="text-slate-400 hover:text-rose-600 transition">
                                             <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
                                         </button>
                                     </td>
@@ -668,33 +758,6 @@
                             `).join('')}
                         </tbody>
                     </table>
-                </div>
-
-                <!-- スマホ用カード型表示 -->
-                <div class="space-y-3 md:hidden">
-                    ${currentState.hotels.map(h => `
-                        <div class="p-3 bg-slate-50/80 rounded-lg border border-slate-200 text-xs space-y-2">
-                            <div class="flex items-start justify-between gap-2">
-                                <h4 class="font-bold text-slate-900 text-sm leading-snug">${escapeHtml(h.name)}</h4>
-                                <span class="shrink-0 inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${getStatusBadgeClass(h.status)}">
-                                    ${escapeHtml(h.status)}
-                                </span>
-                            </div>
-                            <div class="text-slate-600 space-y-1">
-                                <p><span class="text-slate-400">先方担当:</span> ${escapeHtml(h.contact_person || '-')}</p>
-                                <p><span class="text-slate-400">自社担当:</span> ${escapeHtml(h.team_assignee || '-')}</p>
-                                <p><span class="text-slate-400">所在地:</span> ${escapeHtml(h.location \vert{}\vert{} '-')}</p>${(h.description || h.memo) ? `<p class="text-slate-500 bg-white p-2 rounded border border-slate-100">${escapeHtml(h.description || h.memo)}</p>` : ''}
-                            </div>
-                            <div class="flex justify-end gap-3 pt-2 border-t border-slate-200/60 text-slate-500">
-                                <button onclick="openEditHotelModal('${h.id}')" class="flex items-center gap-1 hover:text-brand-600">
-                                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> 編集
-                                </button>
-                                <button onclick="deleteItem('hotels', '${h.id}')" class="flex items-center gap-1 hover:text-rose-600">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 削除
-                                </button>
-                            </div>
-                        </div>
-                    `).join('')}
                 </div>
             `;
         }
@@ -702,236 +765,208 @@
         /* 📜 操作ログビュー */
         function renderLogsView(container) {
             if (!currentState.logs || currentState.logs.length === 0) {
-                container.innerHTML = `<p class="text-center py-8 text-xs text-slate-400">操作ログはありません</p>`;
+                container.innerHTML = `<p class="text-center py-12 text-sm text-slate-400">操作ログデータはありません</p>`;
                 return;
             }
 
             container.innerHTML = `
-                <div class="space-y-2">
-                    ${currentState.logs.map(l => `
-                        <div class="p-2.5 rounded bg-slate-50 border border-slate-100 flex items-center justify-between text-xs text-slate-600">
-                            <div class="flex items-center space-x-2">
-                                <span class="font-mono text-slate-400 text-[10px] sm:text-[11px]">${escapeHtml(l.logged_at || l.time)}</span>
-                                <span class="font-semibold text-slate-700 truncate max-w-[100px] sm:max-w-none">${escapeHtml(l.user_name || l.user)}</span>
-                            </div>
-                            <div class="text-[11px] font-medium text-slate-500">${escapeHtml(l.login_type || l.action)}</div>
-                        </div>
-                    `).join('')}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
+                                <th class="py-3.5 px-4">日時</th>
+                                <th class="py-3.5 px-4">ユーザー名</th>
+                                <th class="py-3.5 px-4">認証種別 / 操作内容</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-slate-700">
+                            ${currentState.logs.map(l => `
+                                <tr class="hover:bg-slate-50/80 transition">
+                                    <td class="py-3.5 px-4 text-slate-500 font-mono">${escapeHtml(l.created_at || l.timestamp || '-')}</td>
+                                    <td class="py-3.5 px-4 font-bold text-slate-900">${escapeHtml(l.user_name || '不明')}</td>
+                                    <td class="py-3.5 px-4 text-slate-600">${escapeHtml(l.login_type || l.action || '-')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
                 </div>
             `;
         }
 
-        /* 🏷️ ステータスバッジのスタイル定義（「終了」を追加） */
-        function getStatusBadgeClass(status) {
-            switch (status) {
-                case '完了':
-                case '契約締結':
-                    return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-                case '進行中':
-                case '交渉中':
-                    return 'bg-sky-50 text-sky-700 border border-sky-200';
-                case '終了':
-                    return 'bg-zinc-100 text-zinc-600 border border-zinc-300';
-                default:
-                    return 'bg-slate-100 text-slate-600 border border-slate-200';
+        /* 📝 CRUD モーダル操作 */
+        function openCreateModal() {
+            const tab = currentState.activeTab;
+            document.getElementById('formItemType').value = tab;
+            document.getElementById('formItemId').value = '';
+            document.getElementById('modalFormTitle').innerText = tab === 'tasks' ? '新規タスク追加' : '新規企業・ホテル追加';
+
+            const fieldsContainer = document.getElementById('formFieldsContainer');
+            if (tab === 'tasks') {
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">タスク名</label>
+                        <input type="text" id="field_title" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">担当者</label>
+                        <input type="text" id="field_team_assignee" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">期限</label>
+                        <input type="date" id="field_due" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">ステータス</label>
+                        <select id="field_status" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="未着手">未着手</option>
+                            <option value="進行中">進行中</option>
+                            <option value="完了">完了</option>
+                            <option value="保留">保留</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">詳細・メモ</label>
+                        <textarea id="field_description" rows="3" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+                    </div>
+                `;
+            } else {
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">施設・企業名</label>
+                        <input type="text" id="field_name" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">先方担当者</label>
+                        <input type="text" id="field_contact_person" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">自社担当者</label>
+                        <input type="text" id="field_our_assignee" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">エリア / 所在地</label>
+                        <input type="text" id="field_area" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">ステータス</label>
+                        <select id="field_status" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="アプローチ前">アプローチ前</option>
+                            <option value="交渉中">交渉中</option>
+                            <option value="合意">合意</option>
+                            <option value="見送り">見送り</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">詳細・メモ</label>
+                        <textarea id="field_notes" rows="3" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+                    </div>
+                `;
             }
+
+            document.getElementById('dataModal').classList.remove('hidden');
         }
 
-        function switchDataTab(tab) {
-            currentState.activeTab = tab;
-            ['tasks', 'hotels', 'logs'].forEach(t => {
-                const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}Btn`);
-                btn.className = (t === tab)
-                    ? "flex-1 sm:flex-none text-center px-2.5 sm:px-4 py-1.5 rounded-md text-xs font-semibold bg-white text-brand-600 shadow-sm transition whitespace-nowrap"
-                    : "flex-1 sm:flex-none text-center px-2.5 sm:px-4 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition whitespace-nowrap";
-            });
+        function openEditTaskModal(id) {
+            const task = currentState.tasks.find(t => String(t.id) === String(id));
+            if (!task) return;
 
-            const addBtn = document.getElementById('addItemBtn');
-            const addBtnText = document.getElementById('addItemBtnText');
-            if (tab === 'tasks') {
-                addBtnText.innerText = "新規タスク追加";
-                addBtn.style.display = "flex";
-            } else if (tab === 'hotels') {
-                addBtnText.innerText = "新規交渉先追加";
-                addBtn.style.display = "flex";
-            } else {
-                addBtn.style.display = "none";
-            }
+            openCreateModal();
+            document.getElementById('modalFormTitle').innerText = 'タスクの編集';
+            document.getElementById('formItemId').value = id;
 
-            renderDashboardData();
+            document.getElementById('field_title').value = task.title || '';
+            document.getElementById('field_team_assignee').value = task.team_assignee || task.assignee || '';
+            document.getElementById('field_due').value = task.due || '';
+            document.getElementById('field_status').value = task.status || '未着手';
+            document.getElementById('field_description').value = task.description || task.detail || '';
+        }
+
+        function openEditHotelModal(id) {
+            const hotel = currentState.hotels.find(h => String(h.id) === String(id));
+            if (!hotel) return;
+
+            currentState.activeTab = 'hotels';
+            openCreateModal();
+            document.getElementById('modalFormTitle').innerText = '企業・ホテル情報の編集';
+            document.getElementById('formItemId').value = id;
+
+            document.getElementById('field_name').value = hotel.name || '';
+            document.getElementById('field_contact_person').value = hotel.contact_person || '';
+            document.getElementById('field_our_assignee').value = hotel.our_assignee || '';
+            document.getElementById('field_area').value = hotel.area || hotel.location || '';
+            document.getElementById('field_status').value = hotel.status || 'アプローチ前';
+            document.getElementById('field_notes').value = hotel.notes || hotel.description || '';
         }
 
         function closeDataModal() {
             document.getElementById('dataModal').classList.add('hidden');
         }
 
-        function openCreateModal() {
-            if (!currentState.token) {
-                alert("データの追加にはログインが必要です。");
-                openLoginModal();
-                return;
-            }
-
-            const type = currentState.activeTab;
-            document.getElementById('modalFormTitle').innerText = type === 'tasks' ? '新規タスク作成' : '新規交渉先・企業登録';
-            document.getElementById('formItemType').value = type;
-            document.getElementById('formItemId').value = '';
-
-            const container = document.getElementById('formFieldsContainer');
-            if (type === 'tasks') {
-                container.innerHTML = `
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">タスク名</label>
-                        <input type="text" id="fieldTitle" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">担当者</label>
-                        <input type="text" id="fieldTeamAssignee" placeholder="例: 山田太郎" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">期限</label>
-                        <input type="date" id="fieldDue" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">ステータス</label>
-                        <select id="fieldStatus" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                            <option value="未着手">未着手</option>
-                            <option value="進行中">進行中</option>
-                            <option value="完了">完了</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">詳細・備考</label>
-                        <textarea id="fieldDescription" rows="3" placeholder="タスクの具体的な内容を入力" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
-                    </div>
-                `;
-            } else if (type === 'hotels') {
-                container.innerHTML = `
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">施設・企業名</label>
-                        <input type="text" id="fieldHotelName" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">相手先担当者名</label>
-                        <input type="text" id="fieldContactPerson" placeholder="例: 佐藤様" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">自社担当者</label>
-                        <input type="text" id="fieldTeamAssignee" placeholder="例: 鈴木" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">エリア / 所在地</label>
-                        <input type="text" id="fieldLocation" placeholder="例: 沖縄県恩納村" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">ステータス</label>
-                        <select id="fieldStatus" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                            <option value="送信準備中">送信準備中</option>
-                            <option value="交渉中">交渉中</option>
-                            <option value="契約締結">契約締結</option>
-                            <option value="終了">終了</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">詳細・メモ</label>
-                        <textarea id="fieldDescription" rows="3" placeholder="交渉状況などを入力" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
-                    </div>
-                `;
-            }
-            document.getElementById('dataModal').classList.remove('hidden');
-        }
-
-        function openEditTaskModal(id) {
-            const task = currentState.tasks.find(t => t.id == id);
-            if (!task) return;
-            openCreateModal();
-            document.getElementById('modalFormTitle').innerText = 'タスクの編集';
-            document.getElementById('formItemId').value = id;
-
-            document.getElementById('fieldTitle').value = task.title || '';
-            document.getElementById('fieldTeamAssignee').value = task.team_assignee || task.assignee || '';
-            document.getElementById('fieldDue').value = task.due || '';
-            document.getElementById('fieldStatus').value = task.status || '未着手';
-            document.getElementById('fieldDescription').value = task.description || '';
-        }
-
-        function openEditHotelModal(id) {
-            const hotel = currentState.hotels.find(h => h.id == id);
-            if (!hotel) return;
-            openCreateModal();
-            document.getElementById('modalFormTitle').innerText = '交渉先・企業情報の編集';
-            document.getElementById('formItemId').value = id;
-
-            document.getElementById('fieldHotelName').value = hotel.name || '';
-            document.getElementById('fieldContactPerson').value = hotel.contact_person || '';
-            document.getElementById('fieldTeamAssignee').value = hotel.team_assignee || '';
-            document.getElementById('fieldLocation').value = hotel.location || '';
-            document.getElementById('fieldStatus').value = hotel.status || '送信準備中';
-            document.getElementById('fieldDescription').value = hotel.description || hotel.memo || '';
-        }
-
         async function handleFormSubmit(e) {
             e.preventDefault();
-            const type = document.getElementById('formItemType').value;
-            const id = document.getElementById('formItemId').value;
-            const isEdit = Boolean(id);
+            const itemType = document.getElementById('formItemType').value;
+            const itemId = document.getElementById('formItemId').value;
 
-            let payload = {};
-            if (type === 'tasks') {
-                payload = {
-                    title: document.getElementById('fieldTitle').value,
-                    team_assignee: document.getElementById('fieldTeamAssignee').value,
-                    due: document.getElementById('fieldDue').value,
-                    status: document.getElementById('fieldStatus').value,
-                    description: document.getElementById('fieldDescription').value
+            let bodyData = {};
+            if (itemType === 'tasks') {
+                bodyData = {
+                    title: document.getElementById('field_title').value,
+                    team_assignee: document.getElementById('field_team_assignee').value,
+                    due: document.getElementById('field_due').value,
+                    status: document.getElementById('field_status').value,
+                    description: document.getElementById('field_description').value
                 };
-            } else if (type === 'hotels') {
-                payload = {
-                    name: document.getElementById('fieldHotelName').value,
-                    contact_person: document.getElementById('fieldContactPerson').value,
-                    team_assignee: document.getElementById('fieldTeamAssignee').value,
-                    location: document.getElementById('fieldLocation').value,
-                    status: document.getElementById('fieldStatus').value,
-                    description: document.getElementById('fieldDescription').value
+            } else {
+                bodyData = {
+                    name: document.getElementById('field_name').value,
+                    contact_person: document.getElementById('field_contact_person').value,
+                    our_assignee: document.getElementById('field_our_assignee').value,
+                    area: document.getElementById('field_area').value,
+                    status: document.getElementById('field_status').value,
+                    notes: document.getElementById('field_notes').value
                 };
             }
 
-            const url = isEdit ? `${API_BASE}/api/${type}/${id}` : `${API_BASE}/api/${type}`;
+            const isEdit = Boolean(itemId);
+            const url = isEdit ? `${API_BASE}/api/${itemType}/${itemId}` : `${API_BASE}/api/${itemType}`;
             const method = isEdit ? 'PUT' : 'POST';
 
             try {
                 const res = await fetch(url, {
                     method: method,
                     headers: getAuthHeaders(),
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(bodyData)
                 });
 
                 if (res.ok) {
                     closeDataModal();
-                    fetchDashboardData();
+                    await fetchDashboardData();
                 } else {
-                    alert("保存に失敗しました。");
+                    alert("保存に失敗しました。権限や通信状態を確認してください。");
                 }
             } catch (err) {
-                console.error("Submit error:", err);
-                alert("通信エラーが発生しました。");
+                console.error("Save Error:", err);
+                alert("送信中にエラーが発生しました。");
             }
         }
 
         async function deleteItem(type, id) {
             if (!confirm("本当に削除しますか？")) return;
+
             try {
                 const res = await fetch(`${API_BASE}/api/${type}/${id}`, {
                     method: 'DELETE',
                     headers: getAuthHeaders()
                 });
+
                 if (res.ok) {
-                    fetchDashboardData();
+                    await fetchDashboardData();
                 } else {
-                    alert("削除に失敗しました。");
+                    alert("削除に失敗しました。権限を確認してください。");
                 }
             } catch (err) {
-                console.error("Delete error:", err);
+                console.error("Delete Error:", err);
+                alert("削除処理中にエラーが発生しました。");
             }
         }
     </script>
