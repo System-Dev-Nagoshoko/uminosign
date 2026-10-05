@@ -232,10 +232,11 @@
             logs: []
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             initLiff();
             loadStoredSession();
+            await verifySessionWithServer();
             fetchDashboardData();
         });
 
@@ -274,7 +275,6 @@
 
         function toggleAuthAction() {
             if (currentState.authType !== 'guest') {
-                // ログアウト処理
                 currentState.user = null;
                 currentState.authType = 'guest';
                 currentState.token = '';
@@ -286,47 +286,93 @@
             }
         }
 
-        /* 🔐 認証関連処理 */
-        function handleGoogleCallback(response) {
+        /* 🔐 認証検証・同期処理 */
+        async function verifySessionWithServer() {
+            if (!currentState.token) return;
             try {
-                // JWTデコード（簡易パース）
-                const base64Url = response.credential.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-                const payload = JSON.parse(jsonPayload);
+                const res = await fetch(`${API_BASE}/api/auth/verify`, { headers: getAuthHeaders() });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.authenticated && data.user) {
+                        currentState.user.role = data.user.role;
+                        currentState.user.name = data.user.name || currentState.user.name;
+                        if (data.user.avatar_url) currentState.user.picture = data.user.avatar_url;
+                        saveSession();
+                        updateUserUI();
+                    }
+                } else if (res.status === 401) {
+                    // トークン無効時はクリア
+                    currentState.user = null;
+                    currentState.authType = 'guest';
+                    currentState.token = '';
+                    localStorage.removeItem('uminosign_auth');
+                    updateUserUI();
+                }
+            } catch (err) {
+                console.error("Session verification failed:", err);
+            }
+        }
 
-                currentState.user = {
-                    name: payload.name || payload.email,
-                    picture: payload.picture,
-                    role: 'GENERAL'
-                };
+        /* 🔐 認証関連処理 */
+        async function handleGoogleCallback(response) {
+            try {
+                const token = `GOOGLE_TOKEN:${response.credential}`;
                 currentState.authType = 'google';
-                currentState.token = response.credential;
+                currentState.token = token;
+
+                // サーバー認証検証
+                const verifyRes = await fetch(`${API_BASE}/api/auth/verify`, { headers: getAuthHeaders() });
+                if (verifyRes.ok) {
+                    const data = await verifyRes.json();
+                    currentState.user = {
+                        name: data.user.name,
+                        picture: data.user.avatar_url,
+                        role: data.user.role
+                    };
+                } else {
+                    // デコードから一時設定
+                    const base64Url = response.credential.split('.')[1];
+                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+                    const payload = JSON.parse(jsonPayload);
+                    currentState.user = { name: payload.name || payload.email, picture: payload.picture, role: 'GENERAL' };
+                }
 
                 saveSession();
                 updateUserUI();
                 closeLoginModal();
                 fetchDashboardData();
+                sendLoginLog(currentState.user.name, 'Google');
             } catch (e) {
-                console.error("Google Auth Decode Error:", e);
-                alert("Googleログインに失敗しました。");
+                console.error("Google Auth Error:", e);
+                alert("Googleログイン処理に失敗しました。");
             }
         }
 
         function loginWithLine() {
             if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                liff.getProfile().then(profile => {
-                    currentState.user = {
-                        name: profile.displayName,
-                        picture: profile.pictureUrl,
-                        role: 'GENERAL'
-                    };
+                liff.getProfile().then(async profile => {
+                    const token = `LINE_TOKEN:${liff.getAccessToken()}`;
                     currentState.authType = 'line';
-                    currentState.token = liff.getAccessToken();
+                    currentState.token = token;
+
+                    const verifyRes = await fetch(`${API_BASE}/api/auth/verify`, { headers: getAuthHeaders() });
+                    if (verifyRes.ok) {
+                        const data = await verifyRes.json();
+                        currentState.user = {
+                            name: data.user.name,
+                            picture: data.user.avatar_url,
+                            role: data.user.role
+                        };
+                    } else {
+                        currentState.user = { name: profile.displayName, picture: profile.pictureUrl, role: 'GENERAL' };
+                    }
+
                     saveSession();
                     updateUserUI();
                     closeLoginModal();
                     fetchDashboardData();
+                    sendLoginLog(currentState.user.name, 'LINE');
                 }).catch(err => console.error("LINE Profile error:", err));
             } else if (typeof liff !== 'undefined') {
                 liff.login();
@@ -335,23 +381,49 @@
             }
         }
 
-        function loginWithAdminPasscode() {
-            const passcode = document.getElementById('adminPasscodeInput').value;
+        async function loginWithAdminPasscode() {
+            const passcode = document.getElementById('adminPasscodeInput').value.trim();
             if (!passcode) return;
 
-            currentState.user = {
-                name: '管理者',
-                picture: 'https://placehold.co/80x80/0f172a/ffffff?text=A',
-                role: 'ADMIN'
-            };
-            currentState.authType = 'admin';
-            currentState.token = passcode;
+            const token = `ADMIN:${passcode}`;
+            currentState.token = token;
 
-            saveSession();
-            updateUserUI();
-            closeLoginModal();
-            fetchDashboardData();
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/verify`, { headers: getAuthHeaders() });
+                if (res.ok) {
+                    const data = await res.json();
+                    currentState.authType = 'admin';
+                    currentState.user = {
+                        name: data.user.name || '管理者',
+                        picture: data.user.avatar_url || 'https://placehold.co/80x80/0f172a/ffffff?text=A',
+                        role: data.user.role || 'ADMIN'
+                    };
+                    saveSession();
+                    updateUserUI();
+                    closeLoginModal();
+                    fetchDashboardData();
+                    sendLoginLog(currentState.user.name, 'パスコード認証');
+                } else {
+                    alert("パスコードが正しくありません。");
+                    currentState.token = '';
+                }
+            } catch (e) {
+                alert("認証エラーが発生しました。");
+                currentState.token = '';
+            }
             document.getElementById('adminPasscodeInput').value = '';
+        }
+
+        async function sendLoginLog(userName, loginType) {
+            try {
+                await fetch(`${API_BASE}/api/logs`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ user_name: userName, login_type: loginType })
+                });
+            } catch (e) {
+                console.error("Log error:", e);
+            }
         }
 
         function saveSession() {
@@ -412,6 +484,15 @@
         }
 
         async function fetchDashboardData() {
+            if (!currentState.token) {
+                document.getElementById('apiStatusText').innerText = "未認証 (要ログイン)";
+                currentState.tasks = [];
+                currentState.hotels = [];
+                currentState.logs = [];
+                renderDashboardData();
+                return;
+            }
+
             try {
                 const [tasksRes, hotelsRes, logsRes] = await Promise.all([
                     fetch(`${API_BASE}/api/tasks`, { headers: getAuthHeaders() }),
@@ -423,7 +504,11 @@
                 if (hotelsRes.ok) currentState.hotels = await hotelsRes.json();
                 if (logsRes.ok) currentState.logs = await logsRes.json();
 
-                document.getElementById('apiStatusText').innerText = "Cloudflare D1 接続中";
+                if (tasksRes.status === 401 || hotelsRes.status === 401) {
+                    document.getElementById('apiStatusText').innerText = "認証エラー (再ログインが必要)";
+                } else {
+                    document.getElementById('apiStatusText').innerText = "Cloudflare D1 接続中";
+                }
             } catch (err) {
                 console.error("Fetch Error:", err);
                 document.getElementById('apiStatusText').innerText = "通信エラー";
@@ -444,7 +529,7 @@
 
         function renderTasksView(container) {
             if (!currentState.tasks || currentState.tasks.length === 0) {
-                container.innerHTML = `<p class="text-center py-8 text-xs text-slate-400">タスクはありません</p>`;
+                container.innerHTML = `<p class="text-center py-8 text-xs text-slate-400">表示できるタスクはありません（ログインが必要です）</p>`;
                 return;
             }
 
@@ -491,7 +576,7 @@
 
         function renderHotelsView(container) {
             if (!currentState.hotels || currentState.hotels.length === 0) {
-                container.innerHTML = `<p class="text-center py-8 text-xs text-slate-400">ホテル・企業データはありません</p>`;
+                container.innerHTML = `<p class="text-center py-8 text-xs text-slate-400">表示できるホテル・企業データはありません（ログインが必要です）</p>`;
                 return;
             }
 
@@ -513,10 +598,10 @@
                             ${currentState.hotels.map(h => `
                                 <tr class="hover:bg-slate-50">
                                     <td class="py-3 px-3 font-medium text-slate-900">${escapeHtml(h.name)}</td>
-                                    <td class="py-3 px-3 text-slate-600 font-medium">${escapeHtml(h.contact_person || h.client_assignee || '-')}</td>
-                                    <td class="py-3 px-3 text-slate-600 font-medium">${escapeHtml(h.team_assignee || h.assignee || '-')}</td>
+                                    <td class="py-3 px-3 text-slate-600 font-medium">${escapeHtml(h.contact_person || '-')}</td>
+                                    <td class="py-3 px-3 text-slate-600 font-medium">${escapeHtml(h.team_assignee || '-')}</td>
                                     <td class="py-3 px-3 text-slate-500">${escapeHtml(h.location)}</td>
-                                    <td class="py-3 px-3 text-slate-500 max-w-xs truncate">${escapeHtml(h.description || h.detail || '-')}</td>
+                                    <td class="py-3 px-3 text-slate-500 max-w-xs truncate">${escapeHtml(h.description || h.memo || '-')}</td>
                                     <td class="py-3 px-3">
                                         <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${getStatusBadgeClass(h.status)}">
                                             ${escapeHtml(h.status)}
@@ -602,6 +687,12 @@
         }
 
         function openCreateModal() {
+            if (!currentState.token) {
+                alert("データの追加にはログインが必要です。");
+                openLoginModal();
+                return;
+            }
+
             const type = currentState.activeTab;
             document.getElementById('modalFormTitle').innerText = type === 'tasks' ? '新規タスク作成' : '新規ホテル・企業登録';
             document.getElementById('formItemType').value = type;
@@ -632,7 +723,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">詳細・備考</label>
-                        <textarea id="fieldDescription" rows="3" placeholder="タスクの具体的な内容や備考を入力" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+                        <textarea id="fieldDescription" rows="3" placeholder="タスクの具体的な内容を入力" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
                     </div>
                 `;
             } else if (type === 'hotels') {
@@ -643,27 +734,27 @@
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">相手先担当者名</label>
-                        <input type="text" id="fieldHotelClientAssignee" placeholder="例: 鈴木一郎（相手方）" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <input type="text" id="fieldContactPerson" placeholder="例: 佐藤様" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">チーム内担当者</label>
-                        <input type="text" id="fieldHotelTeamAssignee" placeholder="例: 佐藤花子（自社）" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <input type="text" id="fieldTeamAssignee" placeholder="例: 鈴木" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">エリア / 所在地</label>
-                        <input type="text" id="fieldHotelLocation" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <input type="text" id="fieldLocation" placeholder="例: 沖縄県恩納村" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">ステータス</label>
-                        <select id="fieldHotelStatus" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                            <option value="未交渉">未交渉</option>
+                        <select id="fieldStatus" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                            <option value="送信準備中">送信準備中</option>
                             <option value="交渉中">交渉中</option>
                             <option value="契約締結">契約締結</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">詳細・備考</label>
-                        <textarea id="fieldHotelDescription" rows="3" placeholder="打合せメモやヒアリング内容などの詳細を入力" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">詳細・メモ</label>
+                        <textarea id="fieldDescription" rows="3" placeholder="交渉状況などを入力" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
                     </div>
                 `;
             }
@@ -671,83 +762,32 @@
         }
 
         function openEditTaskModal(id) {
-            const item = currentState.tasks.find(t => String(t.id) === String(id));
-            if (!item) return;
-
-            document.getElementById('modalFormTitle').innerText = 'タスク編集';
-            document.getElementById('formItemType').value = 'tasks';
+            const task = currentState.tasks.find(t => t.id == id);
+            if (!task) return;
+            openCreateModal();
+            document.getElementById('modalFormTitle').innerText = 'タスクの編集';
             document.getElementById('formItemId').value = id;
 
-            const container = document.getElementById('formFieldsContainer');
-            container.innerHTML = `
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">タスク名</label>
-                    <input type="text" id="fieldTitle" value="${escapeHtml(item.title)}" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">チーム内担当者</label>
-                    <input type="text" id="fieldTeamAssignee" value="${escapeHtml(item.team_assignee || item.assignee || item.team || '')}" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">期限</label>
-                    <input type="date" id="fieldDue" value="${escapeHtml(item.due)}" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">ステータス</label>
-                    <select id="fieldStatus" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                        <option value="未着手" ${item.status === '未着手' ? 'selected' : ''}>未着手</option>
-                        <option value="進行中" ${item.status === '進行中' ? 'selected' : ''}>進行中</option>
-                        <option value="完了" ${item.status === '完了' ? 'selected' : ''}>完了</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">詳細・備考</label>
-                    <textarea id="fieldDescription" rows="3" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">${escapeHtml(item.description || item.detail || '')}</textarea>
-                </div>
-            `;
-            document.getElementById('dataModal').classList.remove('hidden');
+            document.getElementById('fieldTitle').value = task.title || '';
+            document.getElementById('fieldTeamAssignee').value = task.team_assignee || task.assignee || '';
+            document.getElementById('fieldDue').value = task.due || '';
+            document.getElementById('fieldStatus').value = task.status || '未着手';
+            document.getElementById('fieldDescription').value = task.description || '';
         }
 
         function openEditHotelModal(id) {
-            const item = currentState.hotels.find(h => String(h.id) === String(id));
-            if (!item) return;
-
-            document.getElementById('modalFormTitle').innerText = 'ホテル・企業情報編集';
-            document.getElementById('formItemType').value = 'hotels';
+            const hotel = currentState.hotels.find(h => h.id == id);
+            if (!hotel) return;
+            openCreateModal();
+            document.getElementById('modalFormTitle').innerText = 'ホテル・企業情報の編集';
             document.getElementById('formItemId').value = id;
 
-            const container = document.getElementById('formFieldsContainer');
-            container.innerHTML = `
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">施設・企業名</label>
-                    <input type="text" id="fieldHotelName" value="${escapeHtml(item.name)}" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">相手先担当者名</label>
-                    <input type="text" id="fieldHotelClientAssignee" value="${escapeHtml(item.contact_person || item.client_assignee || '')}" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">チーム内担当者</label>
-                    <input type="text" id="fieldHotelTeamAssignee" value="${escapeHtml(item.team_assignee || item.assignee || '')}" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">エリア / 所在地</label>
-                    <input type="text" id="fieldHotelLocation" value="${escapeHtml(item.location)}" required class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">ステータス</label>
-                    <select id="fieldHotelStatus" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                        <option value="未交渉" ${item.status === '未交渉' ? 'selected' : ''}>未交渉</option>
-                        <option value="交渉中" ${item.status === '交渉中' ? 'selected' : ''}>交渉中</option>
-                        <option value="契約締結" ${item.status === '契約締結' ? 'selected' : ''}>契約締結</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">詳細・備考</label>
-                    <textarea id="fieldHotelDescription" rows="3" class="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">${escapeHtml(item.description || item.detail || '')}</textarea>
-                </div>
-            `;
-            document.getElementById('dataModal').classList.remove('hidden');
+            document.getElementById('fieldHotelName').value = hotel.name || '';
+            document.getElementById('fieldContactPerson').value = hotel.contact_person || '';
+            document.getElementById('fieldTeamAssignee').value = hotel.team_assignee || '';
+            document.getElementById('fieldLocation').value = hotel.location || '';
+            document.getElementById('fieldStatus').value = hotel.status || '送信準備中';
+            document.getElementById('fieldDescription').value = hotel.description || hotel.memo || '';
         }
 
         async function handleFormSubmit(e) {
@@ -768,11 +808,11 @@
             } else if (type === 'hotels') {
                 payload = {
                     name: document.getElementById('fieldHotelName').value,
-                    contact_person: document.getElementById('fieldHotelClientAssignee').value,
-                    team_assignee: document.getElementById('fieldHotelTeamAssignee').value,
-                    location: document.getElementById('fieldHotelLocation').value,
-                    status: document.getElementById('fieldHotelStatus').value,
-                    description: document.getElementById('fieldHotelDescription').value
+                    contact_person: document.getElementById('fieldContactPerson').value,
+                    team_assignee: document.getElementById('fieldTeamAssignee').value,
+                    location: document.getElementById('fieldLocation').value,
+                    status: document.getElementById('fieldStatus').value,
+                    description: document.getElementById('fieldDescription').value
                 };
             }
 
@@ -781,7 +821,7 @@
 
             try {
                 const res = await fetch(url, {
-                    method,
+                    method: method,
                     headers: getAuthHeaders(),
                     body: JSON.stringify(payload)
                 });
@@ -793,28 +833,25 @@
                     alert("保存に失敗しました。");
                 }
             } catch (err) {
-                console.error("Save Error:", err);
+                console.error("Submit error:", err);
                 alert("通信エラーが発生しました。");
             }
         }
 
         async function deleteItem(type, id) {
             if (!confirm("本当に削除しますか？")) return;
-
             try {
                 const res = await fetch(`${API_BASE}/api/${type}/${id}`, {
                     method: 'DELETE',
                     headers: getAuthHeaders()
                 });
-
                 if (res.ok) {
                     fetchDashboardData();
                 } else {
                     alert("削除に失敗しました。");
                 }
             } catch (err) {
-                console.error("Delete Error:", err);
-                alert("通信エラーが発生しました。");
+                console.error("Delete error:", err);
             }
         }
     </script>
