@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>海のサインプロジェクト - 管理ダッシュボード</title>
 
+    <!-- ファビコンエラー防止 -->
+    <link rel="icon" href="data:,">
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -232,12 +235,17 @@
             logs: []
         };
 
+        // アプリ起動時のメイン処理
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
-            initLiff();
             loadStoredSession();
+
+            // LIFF初期化と認証状態の確定を待機
+            await initLiffAndCheckAuth();
+
+            // 認証情報が確定した後にAPI呼び出し
             await verifySessionWithServer();
-            fetchDashboardData();
+            await fetchDashboardData();
         });
 
         function getAuthHeaders() {
@@ -259,9 +267,36 @@
                 .replace(/'/g, '&#039;');
         }
 
-        function initLiff() {
-            if (typeof liff !== 'undefined' && LIFF_ID) {
-                liff.init({ liffId: LIFF_ID }).catch(err => console.error("LIFF Init failed:", err));
+        /* 🟢 LIFF初期化およびログイン後のトークン同期 */
+        async function initLiffAndCheckAuth() {
+            if (typeof liff === 'undefined' || !LIFF_ID) return;
+
+            try {
+                await liff.init({ liffId: LIFF_ID });
+
+                // LIFFログイン済み（リダイレクト復帰時も含む）
+                if (liff.isLoggedIn()) {
+                    const profile = await liff.getProfile();
+                    const lineAccessToken = liff.getAccessToken();
+
+                    currentState.authType = 'line';
+                    currentState.token = `LINE_TOKEN:${lineAccessToken}`;
+                    currentState.user = {
+                        name: profile.displayName,
+                        picture: profile.pictureUrl,
+                        role: 'GENERAL'
+                    };
+
+                    saveSession();
+                    updateUserUI();
+
+                    // URLクエリパラメータ(?code=...等)を綺麗に削除
+                    if (window.location.search) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                }
+            } catch (err) {
+                console.error("LIFF Init / Auth Failed:", err);
             }
         }
 
@@ -275,6 +310,9 @@
 
         function toggleAuthAction() {
             if (currentState.authType !== 'guest') {
+                if (currentState.authType === 'line' && typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                    liff.logout();
+                }
                 currentState.user = null;
                 currentState.authType = 'guest';
                 currentState.token = '';
@@ -301,7 +339,7 @@
                         updateUserUI();
                     }
                 } else if (res.status === 401) {
-                    // トークン無効時はクリア
+                    // トークンが無効な場合はクリア
                     currentState.user = null;
                     currentState.authType = 'guest';
                     currentState.token = '';
@@ -313,14 +351,13 @@
             }
         }
 
-        /* 🔐 認証関連処理 */
+        /* 🔐 ログイン各種 */
         async function handleGoogleCallback(response) {
             try {
                 const token = `GOOGLE_TOKEN:${response.credential}`;
                 currentState.authType = 'google';
                 currentState.token = token;
 
-                // サーバー認証検証
                 const verifyRes = await fetch(`${API_BASE}/api/auth/verify`, { headers: getAuthHeaders() });
                 if (verifyRes.ok) {
                     const data = await verifyRes.json();
@@ -330,7 +367,6 @@
                         role: data.user.role
                     };
                 } else {
-                    // デコードから一時設定
                     const base64Url = response.credential.split('.')[1];
                     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
                     const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
@@ -350,32 +386,10 @@
         }
 
         function loginWithLine() {
-            if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                liff.getProfile().then(async profile => {
-                    const token = `LINE_TOKEN:${liff.getAccessToken()}`;
-                    currentState.authType = 'line';
-                    currentState.token = token;
-
-                    const verifyRes = await fetch(`${API_BASE}/api/auth/verify`, { headers: getAuthHeaders() });
-                    if (verifyRes.ok) {
-                        const data = await verifyRes.json();
-                        currentState.user = {
-                            name: data.user.name,
-                            picture: data.user.avatar_url,
-                            role: data.user.role
-                        };
-                    } else {
-                        currentState.user = { name: profile.displayName, picture: profile.pictureUrl, role: 'GENERAL' };
-                    }
-
-                    saveSession();
-                    updateUserUI();
-                    closeLoginModal();
-                    fetchDashboardData();
-                    sendLoginLog(currentState.user.name, 'LINE');
-                }).catch(err => console.error("LINE Profile error:", err));
-            } else if (typeof liff !== 'undefined') {
-                liff.login();
+            if (typeof liff !== 'undefined') {
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                }
             } else {
                 alert("LIFF SDKが読み込まれていません。");
             }
@@ -681,7 +695,6 @@
             renderDashboardData();
         }
 
-        /* 📝 モーダル & フォーム処理 */
         function closeDataModal() {
             document.getElementById('dataModal').classList.add('hidden');
         }
