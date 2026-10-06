@@ -28,7 +28,8 @@
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- 💡 SDKロード完了時に initGoogleAuth を実行する onload を追加 -->
+    <script src="https://accounts.google.com/gsi/client" async defer onload="initGoogleAuth()"></script>
 
     <style>
         /* 🌈 背景グラデーションアニメーション */
@@ -219,7 +220,7 @@
             <p class="text-xs text-slate-500 mb-5">ご利用のアカウントで認証を行ってください。</p>
 
             <div class="space-y-3.5">
-                <div class="flex justify-center w-full">
+                <div class="flex justify-center w-full min-h-[40px]">
                     <div id="g_id_signin_btn" class="w-full flex justify-center"></div>
                 </div>
 
@@ -338,6 +339,7 @@
             }
         }
 
+        /* 💡 Google 認証初期化処理の修正 */
         function initGoogleAuth() {
             if (typeof google === 'undefined' || !google.accounts) return;
 
@@ -349,13 +351,15 @@
 
             const btnContainer = document.getElementById('g_id_signin_btn');
             if (btnContainer) {
+                btnContainer.innerHTML = ''; // 再描画時にコンテナをクリア
                 google.accounts.id.renderButton(btnContainer, {
                     type: 'standard',
                     size: 'large',
                     theme: 'outline',
                     text: 'sign_in_with',
                     shape: 'rectangular',
-                    logo_alignment: 'left'
+                    logo_alignment: 'left',
+                    width: 280
                 });
             }
         }
@@ -390,8 +394,12 @@
             }
         }
 
+        /* 💡 モーダル表示時に Google ボタンのレンダリングを実行するよう修正 */
         function openLoginModal() {
             document.getElementById('loginModal').classList.remove('hidden');
+            setTimeout(() => {
+                initGoogleAuth();
+            }, 50);
         }
 
         function closeLoginModal() {
