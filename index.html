@@ -145,7 +145,7 @@
     <!-- 📊 MAIN CONTAINER -->
     <main class="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-8 flex-1 space-y-4 sm:space-y-6 relative z-10 w-full">
         
-        <!-- Status Overview Cards (スマホでは1列、タブレット以上で3列) -->
+        <!-- Status Overview Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
             <div class="glass-panel p-4 sm:p-5 rounded-2xl shadow-sm flex items-center justify-between">
                 <div>
@@ -203,7 +203,7 @@
                 </button>
             </div>
 
-            <!-- DATA CONTAINER (テーブルは横スクロール対応) -->
+            <!-- DATA CONTAINER -->
             <div id="dataContainer" class="min-h-[250px] overflow-x-auto"></div>
         </div>
     </main>
@@ -686,19 +686,13 @@
                                 <td class="py-3 px-3 font-bold text-slate-900">${escapeHtml(t.title)}</td>
                                 <td class="py-3 px-3 text-slate-600 font-medium">${escapeHtml(t.team_assignee || t.assignee || t.team || '-')}</td>
                                 <td class="py-3 px-3 text-slate-500 max-w-[150px] truncate">${escapeHtml(t.description || t.detail || '-')}</td>
-                                <td class="py-3 px-3 text-slate-500 font-mono">${escapeHtml(t.due)}</td>
+                                <td class="py-3 px-3 text-slate-500 font-mono">${escapeHtml(t.due || '-')}</td>
                                 <td class="py-3 px-3">
-                                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold ${getStatusBadgeClass(t.status)}">
-                                        ${escapeHtml(t.status)}
-                                    </span>
+                                    <span class="px-2 py-1 rounded-full text-[10px] font-bold ${getStatusBadgeClass(t.status)}">${escapeHtml(t.status || '未着手')}</span>
                                 </td>
-                                <td class="py-3 px-3 text-right space-x-2">
-                                    <button onclick="openEditTaskModal('${t.id}')" class="text-slate-400 hover:text-brand-600 transition p-1">
-                                        <i data-lucide="edit-3" class="w-4 h-4 inline"></i>
-                                    </button>
-                                    <button onclick="deleteItem('tasks', '${t.id}')" class="text-slate-400 hover:text-rose-600 transition p-1">
-                                        <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
-                                    </button>
+                                <td class="py-3 px-3 text-right space-x-1">
+                                    <button onclick="openEditModal('tasks', '${t.id}')" class="p-1 text-slate-400 hover:text-brand-600 transition"><i data-lucide="edit-3" class="w-4 h-4 inline"></i></button>
+                                    <button onclick="deleteItem('tasks', '${t.id}')" class="p-1 text-slate-400 hover:text-rose-600 transition"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -707,22 +701,20 @@
             `;
         }
 
-        /* 🏨 交渉・企業管理ビュー */
+        /* 🏢 交渉・企業ビュー */
         function renderHotelsView(container) {
             if (!currentState.hotels || currentState.hotels.length === 0) {
-                container.innerHTML = `<p class="text-center py-10 text-xs sm:text-sm text-slate-400">表示できるホテル・企業データはありません（ログインが必要です）</p>`;
+                container.innerHTML = `<p class="text-center py-10 text-xs sm:text-sm text-slate-400">表示できる企業データはありません（ログインが必要です）</p>`;
                 return;
             }
 
             container.innerHTML = `
-                <table class="w-full text-left text-xs whitespace-nowrap min-w-[680px]">
+                <table class="w-full text-left text-xs whitespace-nowrap min-w-[600px]">
                     <thead>
                         <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
-                            <th class="py-3 px-3">施設・企業名</th>
-                            <th class="py-3 px-3">先方担当者</th>
-                            <th class="py-3 px-3">自社担当者</th>
-                            <th class="py-3 px-3">エリア / 所在地</th>
-                            <th class="py-3 px-3">詳細・メモ</th>
+                            <th class="py-3 px-3">企業・施設名</th>
+                            <th class="py-3 px-3">担当者</th>
+                            <th class="py-3 px-3">進捗・メモ</th>
                             <th class="py-3 px-3">ステータス</th>
                             <th class="py-3 px-3 text-right">操作</th>
                         </tr>
@@ -730,23 +722,15 @@
                     <tbody class="divide-y divide-slate-100 text-slate-700">
                         ${currentState.hotels.map(h => `
                             <tr class="hover:bg-slate-50/80 transition">
-                                <td class="py-3 px-3 font-bold text-slate-900">${escapeHtml(h.name)}</td>
-                                <td class="py-3 px-3 text-slate-600 font-medium">${escapeHtml(h.contact_person || '-')}</td>
-                                <td class="py-3 px-3 text-slate-600">${escapeHtml(h.our_assignee || '-')}</td>
-                                <td class="py-3 px-3 text-slate-500">${escapeHtml(h.area || h.location || '-')}</td>
-                                <td class="py-3 px-3 text-slate-500 max-w-[150px] truncate">${escapeHtml(h.notes || h.description || '-')}</td>
+                                <td class="py-3 px-3 font-bold text-slate-900">${escapeHtml(h.name || h.title)}</td>
+                                <td class="py-3 px-3 text-slate-600 font-medium">${escapeHtml(h.contact_person || h.assignee || '-')}</td>
+                                <td class="py-3 px-3 text-slate-500 max-w-[200px] truncate">${escapeHtml(h.notes || h.description || '-')}</td>
                                 <td class="py-3 px-3">
-                                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold ${getStatusBadgeClass(h.status)}">
-                                        ${escapeHtml(h.status)}
-                                    </span>
+                                    <span class="px-2 py-1 rounded-full text-[10px] font-bold ${getStatusBadgeClass(h.status)}">${escapeHtml(h.status || 'アプローチ前')}</span>
                                 </td>
-                                <td class="py-3 px-3 text-right space-x-2">
-                                    <button onclick="openEditHotelModal('${h.id}')" class="text-slate-400 hover:text-brand-600 transition p-1">
-                                        <i data-lucide="edit-3" class="w-4 h-4 inline"></i>
-                                    </button>
-                                    <button onclick="deleteItem('hotels', '${h.id}')" class="text-slate-400 hover:text-rose-600 transition p-1">
-                                        <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
-                                    </button>
+                                <td class="py-3 px-3 text-right space-x-1">
+                                    <button onclick="openEditModal('hotels', '${h.id}')" class="p-1 text-slate-400 hover:text-brand-600 transition"><i data-lucide="edit-3" class="w-4 h-4 inline"></i></button>
+                                    <button onclick="deleteItem('hotels', '${h.id}')" class="p-1 text-slate-400 hover:text-rose-600 transition"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -758,24 +742,24 @@
         /* 📜 操作ログビュー */
         function renderLogsView(container) {
             if (!currentState.logs || currentState.logs.length === 0) {
-                container.innerHTML = `<p class="text-center py-10 text-xs sm:text-sm text-slate-400">操作ログデータはありません</p>`;
+                container.innerHTML = `<p class="text-center py-10 text-xs sm:text-sm text-slate-400">操作ログはありません</p>`;
                 return;
             }
 
             container.innerHTML = `
-                <table class="w-full text-left text-xs whitespace-nowrap min-w-[480px]">
+                <table class="w-full text-left text-xs whitespace-nowrap min-w-[500px]">
                     <thead>
                         <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
                             <th class="py-3 px-3">日時</th>
                             <th class="py-3 px-3">ユーザー名</th>
-                            <th class="py-3 px-3">認証種別 / 操作内容</th>
+                            <th class="py-3 px-3">種別 / 内容</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-slate-700">
                         ${currentState.logs.map(l => `
                             <tr class="hover:bg-slate-50/80 transition">
-                                <td class="py-3 px-3 text-slate-500 font-mono">${escapeHtml(l.created_at || l.timestamp || '-')}</td>
-                                <td class="py-3 px-3 font-bold text-slate-900">${escapeHtml(l.user_name || '不明')}</td>
+                                <td class="py-3 px-3 text-slate-400 font-mono">${escapeHtml(l.created_at || l.timestamp || '-')}</td>
+                                <td class="py-3 px-3 font-semibold text-slate-800">${escapeHtml(l.user_name || l.user || '不明')}</td>
                                 <td class="py-3 px-3 text-slate-600">${escapeHtml(l.login_type || l.action || '-')}</td>
                             </tr>
                         `).join('')}
@@ -784,31 +768,33 @@
             `;
         }
 
-        /* 📝 CRUD モーダル操作 */
+        /* ➕ モーダル & CRUD 操作関数 */
         function openCreateModal() {
-            const tab = currentState.activeTab;
-            document.getElementById('formItemType').value = tab;
+            const type = currentState.activeTab;
+            if (type === 'logs') return;
+
+            document.getElementById('formItemType').value = type;
             document.getElementById('formItemId').value = '';
-            document.getElementById('modalFormTitle').innerText = tab === 'tasks' ? '新規タスク追加' : '新規企業・ホテル追加';
+            document.getElementById('modalFormTitle').innerText = type === 'tasks' ? '新規タスクの作成' : '新規企業の追加';
 
             const fieldsContainer = document.getElementById('formFieldsContainer');
-            if (tab === 'tasks') {
+            if (type === 'tasks') {
                 fieldsContainer.innerHTML = `
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">タスク名</label>
-                        <input type="text" id="field_title" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <input type="text" id="fieldTitle" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">担当者</label>
-                        <input type="text" id="field_team_assignee" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <input type="text" id="fieldAssignee" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">期限</label>
-                        <input type="date" id="field_due" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <input type="date" id="fieldDue" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">ステータス</label>
-                        <select id="field_status" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <select id="fieldStatus" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                             <option value="未着手">未着手</option>
                             <option value="進行中">進行中</option>
                             <option value="完了">完了</option>
@@ -817,30 +803,22 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">詳細・メモ</label>
-                        <textarea id="field_description" rows="3" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+                        <textarea id="fieldDescription" rows="3" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
                     </div>
                 `;
             } else {
                 fieldsContainer.innerHTML = `
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">施設・企業名</label>
-                        <input type="text" id="field_name" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">企業・施設名</label>
+                        <input type="text" id="fieldName" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">先方担当者</label>
-                        <input type="text" id="field_contact_person" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">自社担当者</label>
-                        <input type="text" id="field_our_assignee" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">エリア / 所在地</label>
-                        <input type="text" id="field_area" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">担当者</label>
+                        <input type="text" id="fieldContact" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">ステータス</label>
-                        <select id="field_status" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                        <select id="fieldStatus" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
                             <option value="アプローチ前">アプローチ前</option>
                             <option value="交渉中">交渉中</option>
                             <option value="合意">合意</option>
@@ -848,8 +826,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">詳細・メモ</label>
-                        <textarea id="field_notes" rows="3" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">メモ</label>
+                        <textarea id="fieldNotes" rows="3" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
                     </div>
                 `;
             }
@@ -857,36 +835,27 @@
             document.getElementById('dataModal').classList.remove('hidden');
         }
 
-        function openEditTaskModal(id) {
-            const task = currentState.tasks.find(t => String(t.id) === String(id));
-            if (!task) return;
+        function openEditModal(type, id) {
+            const list = currentState[type];
+            const item = list.find(x => String(x.id) === String(id));
+            if (!item) return;
 
             openCreateModal();
-            document.getElementById('modalFormTitle').innerText = 'タスクの編集';
             document.getElementById('formItemId').value = id;
+            document.getElementById('modalFormTitle').innerText = type === 'tasks' ? 'タスク編集' : '企業情報編集';
 
-            document.getElementById('field_title').value = task.title || '';
-            document.getElementById('field_team_assignee').value = task.team_assignee || task.assignee || '';
-            document.getElementById('field_due').value = task.due || '';
-            document.getElementById('field_status').value = task.status || '未着手';
-            document.getElementById('field_description').value = task.description || task.detail || '';
-        }
-
-        function openEditHotelModal(id) {
-            const hotel = currentState.hotels.find(h => String(h.id) === String(id));
-            if (!hotel) return;
-
-            currentState.activeTab = 'hotels';
-            openCreateModal();
-            document.getElementById('modalFormTitle').innerText = '企業・ホテル情報の編集';
-            document.getElementById('formItemId').value = id;
-
-            document.getElementById('field_name').value = hotel.name || '';
-            document.getElementById('field_contact_person').value = hotel.contact_person || '';
-            document.getElementById('field_our_assignee').value = hotel.our_assignee || '';
-            document.getElementById('field_area').value = hotel.area || hotel.location || '';
-            document.getElementById('field_status').value = hotel.status || 'アプローチ前';
-            document.getElementById('field_notes').value = hotel.notes || hotel.description || '';
+            if (type === 'tasks') {
+                if (document.getElementById('fieldTitle')) document.getElementById('fieldTitle').value = item.title || '';
+                if (document.getElementById('fieldAssignee')) document.getElementById('fieldAssignee').value = item.team_assignee || item.assignee || '';
+                if (document.getElementById('fieldDue')) document.getElementById('fieldDue').value = item.due || '';
+                if (document.getElementById('fieldStatus')) document.getElementById('fieldStatus').value = item.status || '未着手';
+                if (document.getElementById('fieldDescription')) document.getElementById('fieldDescription').value = item.description || item.detail || '';
+            } else {
+                if (document.getElementById('fieldName')) document.getElementById('fieldName').value = item.name || item.title || '';
+                if (document.getElementById('fieldContact')) document.getElementById('fieldContact').value = item.contact_person || item.assignee || '';
+                if (document.getElementById('fieldStatus')) document.getElementById('fieldStatus').value = item.status || 'アプローチ前';
+                if (document.getElementById('fieldNotes')) document.getElementById('fieldNotes').value = item.notes || item.description || '';
+            }
         }
 
         function closeDataModal() {
@@ -895,69 +864,64 @@
 
         async function handleFormSubmit(e) {
             e.preventDefault();
-            const itemType = document.getElementById('formItemType').value;
-            const itemId = document.getElementById('formItemId').value;
+            const type = document.getElementById('formItemType').value;
+            const id = document.getElementById('formItemId').value;
+            const isEdit = Boolean(id);
 
-            let bodyData = {};
-            if (itemType === 'tasks') {
-                bodyData = {
-                    title: document.getElementById('field_title').value,
-                    team_assignee: document.getElementById('field_team_assignee').value,
-                    due: document.getElementById('field_due').value,
-                    status: document.getElementById('field_status').value,
-                    description: document.getElementById('field_description').value
+            let payload = {};
+            if (type === 'tasks') {
+                payload = {
+                    title: document.getElementById('fieldTitle')?.value,
+                    team_assignee: document.getElementById('fieldAssignee')?.value,
+                    due: document.getElementById('fieldDue')?.value,
+                    status: document.getElementById('fieldStatus')?.value,
+                    description: document.getElementById('fieldDescription')?.value
                 };
             } else {
-                bodyData = {
-                    name: document.getElementById('field_name').value,
-                    contact_person: document.getElementById('field_contact_person').value,
-                    our_assignee: document.getElementById('field_our_assignee').value,
-                    area: document.getElementById('field_area').value,
-                    status: document.getElementById('field_status').value,
-                    notes: document.getElementById('field_notes').value
+                payload = {
+                    name: document.getElementById('fieldName')?.value,
+                    contact_person: document.getElementById('fieldContact')?.value,
+                    status: document.getElementById('fieldStatus')?.value,
+                    notes: document.getElementById('fieldNotes')?.value
                 };
             }
 
-            const isEdit = Boolean(itemId);
-            const url = isEdit ? `${API_BASE}/api/${itemType}/${itemId}` : `${API_BASE}/api/${itemType}`;
+            const url = isEdit ? `${API_BASE}/api/${type}/${id}` : `${API_BASE}/api/${type}`;
             const method = isEdit ? 'PUT' : 'POST';
 
             try {
                 const res = await fetch(url, {
-                    method: method,
+                    method,
                     headers: getAuthHeaders(),
-                    body: JSON.stringify(bodyData)
+                    body: JSON.stringify(payload)
                 });
-
                 if (res.ok) {
                     closeDataModal();
                     await fetchDashboardData();
                 } else {
-                    alert("保存に失敗しました。権限や通信状態を確認してください。");
+                    alert('保存に失敗しました。');
                 }
             } catch (err) {
-                console.error("Save Error:", err);
-                alert("送信中にエラーが発生しました。");
+                console.error('Submit Error:', err);
+                alert('通信エラーが発生しました。');
             }
         }
 
         async function deleteItem(type, id) {
-            if (!confirm("本当に削除しますか？")) return;
-
+            if (!confirm('本当に削除しますか？')) return;
             try {
                 const res = await fetch(`${API_BASE}/api/${type}/${id}`, {
                     method: 'DELETE',
                     headers: getAuthHeaders()
                 });
-
                 if (res.ok) {
                     await fetchDashboardData();
                 } else {
-                    alert("削除に失敗しました。権限を確認してください。");
+                    alert('削除に失敗しました。');
                 }
             } catch (err) {
-                console.error("Delete Error:", err);
-                alert("削除処理中にエラーが発生しました。");
+                console.error('Delete Error:', err);
+                alert('通信エラーが発生しました。');
             }
         }
     </script>
