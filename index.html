@@ -747,7 +747,7 @@
                             <tr class="hover:bg-slate-50/80 transition">
                                 <td class="py-3 px-3 font-bold text-slate-900">${escapeHtml(h.name)}</td>
                                 <td class="py-3 px-3 text-slate-600 font-medium">${escapeHtml(h.contact_person || h.assignee || '-')}</td>
-                                <td class="py-3 px-3 text-slate-500 max-w-[200px] truncate">${escapeHtml(h.notes || h.detail || '-')}</td>
+                                <td class="py-3 px-3 text-slate-500 max-w-[200px] truncate">${escapeHtml(h.memo || h.description || h.notes || h.detail || '-')}</td>
                                 <td class="py-3 px-3">
                                     <span class="px-2 py-1 rounded-full text-[10px] font-bold ${getStatusBadgeClass(h.status)}">${escapeHtml(h.status || 'アプローチ前')}</span>
                                 </td>
@@ -780,7 +780,7 @@
                     <tbody class="divide-y divide-slate-100 text-slate-700">
                         ${currentState.logs.map(l => `
                             <tr class="hover:bg-slate-50/80 transition">
-                                <td class="py-3 px-3 text-slate-400 font-mono">${escapeHtml(l.created_at || l.timestamp || '-')}</td>
+                                <td class="py-3 px-3 text-slate-400 font-mono">${escapeHtml(l.logged_at || l.created_at || l.timestamp || '-')}</td>
                                 <td class="py-3 px-3 font-semibold text-slate-800">${escapeHtml(l.user_name || '-')}</td>
                                 <td class="py-3 px-3 text-slate-600">${escapeHtml(l.login_type || l.action || '-')}</td>
                             </tr>
@@ -790,9 +790,7 @@
             `;
         }
 
-        /* モーダル & データ操作関数 */
         function openCreateModal() {
-            // 未ログイン状態（トークンがない場合）はログインモーダルを開く
             if (!currentState.token) {
                 alert("タスクを追加するにはログインが必要です。");
                 openLoginModal();
@@ -887,7 +885,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">進捗・メモ</label>
-                        <textarea id="field_notes" rows="3" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">${escapeHtml(item?.notes || item?.detail || '')}</textarea>
+                        <textarea id="field_notes" rows="3" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">${escapeHtml(item?.memo || item?.description || item?.notes || item?.detail || '')}</textarea>
                     </div>
                 `;
             }
@@ -909,11 +907,14 @@
                     description: document.getElementById('field_description').value
                 };
             } else if (type === 'hotels') {
+                const noteVal = document.getElementById('field_notes').value;
                 payload = {
                     name: document.getElementById('field_name').value,
                     contact_person: document.getElementById('field_contact').value,
                     status: document.getElementById('field_status').value,
-                    notes: document.getElementById('field_notes').value
+                    memo: noteVal,
+                    description: noteVal,
+                    notes: noteVal
                 };
             }
 
