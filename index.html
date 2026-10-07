@@ -26,7 +26,8 @@
         }
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- 修正: LINE SDKがブロックされても無視して全体を止めないように修正 -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" async onerror="console.warn('LINE SDK blocked, skipping...');"></script>
     <script src="https://accounts.google.com/gsi/client" async defer onload="initGoogleAuth()"></script>
 
     <style>
@@ -370,7 +371,11 @@
         }
 
         async function initLiffAndCheckAuth() {
-            if (typeof liff === 'undefined' || !LIFF_ID) return;
+            // 修正: liff が定義されていない（ブロックされた）場合は安全にスキップ処理を行う
+            if (typeof liff === 'undefined' || !LIFF_ID) {
+                console.warn("LINE SDK is unavailable in this network environment. Skipping LIFF init.");
+                return;
+            }
 
             try {
                 await liff.init({ liffId: LIFF_ID });
@@ -508,7 +513,7 @@
                     liff.login();
                 }
             } else {
-                alert("LIFF SDKが読み込まれていません。");
+                alert("LINE SDKが読み込まれていないネットワーク環境のため利用できません。Googleログインをご利用ください。");
             }
         }
 
