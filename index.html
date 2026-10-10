@@ -30,7 +30,7 @@
     <!-- LINE SDK: エラー発生時でも後続処理を止めない -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" async onerror="console.warn('LINE SDK blocked, skipping...');"></script>
     
-    <!-- Google Identity Services: onloadでの直接呼び出しを削除しJS側で制御 -->
+    <!-- Google Identity Services: JS側で制御するため onload は使用しない -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
@@ -272,6 +272,7 @@
         const GOOGLE_CLIENT_ID = "988378587809-g9calu17mv9huuidppdjj74ibimuo7vb.apps.googleusercontent.com";
 
         let isGoogleAuthInitialized = false;
+        let isLiffInitialized = false;
 
         let currentState = {
             user: null,
@@ -374,7 +375,6 @@
         }
 
         async function initLiffAndCheckAuth() {
-            // LIFF SDKがロードされていない場合は安全にスキップ
             if (typeof liff === 'undefined' || !LIFF_ID) {
                 console.warn("LINE SDK is unavailable in this network environment. Skipping LIFF init.");
                 return;
@@ -382,6 +382,7 @@
 
             try {
                 await liff.init({ liffId: LIFF_ID });
+                isLiffInitialized = true;
 
                 if (liff.isLoggedIn()) {
                     const profile = await liff.getProfile();
@@ -510,18 +511,29 @@
             }
         }
 
-        function loginWithLine() {
-            // liff が準備されていない場合は安全に警告を表示
-            if (typeof liff !== 'undefined' && LIFF_ID) {
-                try {
-                    if (!liff.isLoggedIn()) {
-                        liff.login();
-                    }
-                } catch (e) {
-                    alert("LINEログインを実行できませんでした。Googleログインをご利用ください。");
+        async function loginWithLine() {
+            if (typeof liff === 'undefined' || !LIFF_ID) {
+                alert("LINE SDKが読み込まれていないか、LIFF IDが設定されていません。Googleログインをご利用ください。");
+                return;
+            }
+
+            try {
+                if (!isLiffInitialized) {
+                    await liff.init({ liffId: LIFF_ID });
+                    isLiffInitialized = true;
                 }
-            } else {
-                alert("LINE SDKが読み込まれていないネットワーク環境のため利用できません。Googleログインをご利用ください。");
+
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                } else {
+                    await initLiffAndCheckAuth();
+                    await verifySessionWithServer();
+                    await fetchDashboardData();
+                    closeLoginModal();
+                }
+            } catch (e) {
+                console.error("LINE Login Error:", e);
+                alert(`LINEログインの開始に失敗しました:\n${e.message || e}`);
             }
         }
 
