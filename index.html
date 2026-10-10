@@ -30,7 +30,7 @@
     <!-- LINE SDK: エラー発生時でも後続処理を止めない -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" async onerror="console.warn('LINE SDK blocked, skipping...');"></script>
     
-    <!-- Google Identity Services: JS側で制御するため onload は使用しない -->
+    <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
@@ -523,14 +523,18 @@
                     isLiffInitialized = true;
                 }
 
+                // 未ログインの場合はLINE認証画面へリダイレクト（サーバー問い合わせはしない）
                 if (!liff.isLoggedIn()) {
                     liff.login();
-                } else {
-                    await initLiffAndCheckAuth();
-                    await verifySessionWithServer();
-                    await fetchDashboardData();
-                    closeLoginModal();
+                    return;
                 }
+
+                // すでにログインしている場合のみ情報を取得して検証
+                await initLiffAndCheckAuth();
+                await verifySessionWithServer();
+                await fetchDashboardData();
+                closeLoginModal();
+
             } catch (e) {
                 console.error("LINE Login Error:", e);
                 alert(`LINEログインの開始に失敗しました:\n${e.message || e}`);
