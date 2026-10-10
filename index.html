@@ -27,7 +27,7 @@
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- LINE SDK: エラー発生時でも後続処理を止めない -->
+    <!-- LINE SDK: ブロックされても全体を止めない -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" async onerror="console.warn('LINE SDK blocked, skipping...');"></script>
     
     <!-- Google Identity Services -->
@@ -290,7 +290,11 @@
 
             await initLiffAndCheckAuth();
             initGoogleAuth();
-            await verifySessionWithServer();
+
+            // トークンが存在するログイン済み状態の場合のみサーバー検証を実行
+            if (currentState.token) {
+                await verifySessionWithServer();
+            }
             await fetchDashboardData();
         });
 
@@ -523,13 +527,13 @@
                     isLiffInitialized = true;
                 }
 
-                // 未ログインの場合はLINE認証画面へリダイレクト（サーバー問い合わせはしない）
+                // 1. 未ログインの場合はLINE認証画面に遷移させて処理を終了（401エラーAPI呼び出しを防ぐ）
                 if (!liff.isLoggedIn()) {
                     liff.login();
-                    return;
+                    return; // 重要: ここで即時リターンする
                 }
 
-                // すでにログインしている場合のみ情報を取得して検証
+                // 2. ログイン完了後（リダイレクト復帰後）のみ、セッションの確認とデータ取得を行う
                 await initLiffAndCheckAuth();
                 await verifySessionWithServer();
                 await fetchDashboardData();
