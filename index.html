@@ -27,9 +27,6 @@
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- LINE SDK: ブロックされても全体を止めない -->
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" async onerror="console.warn('LINE SDK blocked, skipping...');"></script>
-    
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
@@ -199,35 +196,18 @@
         </div>
     </main>
 
-    <!-- LOGIN MODAL -->
+    <!-- LOGIN MODAL (Google専用) -->
     <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md hidden">
-        <div class="bg-white/95 w-[92vw] max-w-[380px] rounded-2xl p-5 sm:p-6 border border-white/50 shadow-2xl relative">
+        <div class="bg-white/95 w-[92vw] max-w-[380px] rounded-2xl p-5 sm:p-6 border border-white/50 shadow-2xl relative text-center">
             <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
 
-            <h3 class="text-base sm:text-lg font-bold text-slate-800 mb-1">システムログイン</h3>
-            <p class="text-xs text-slate-500 mb-5">ご利用のアカウントで認証を行ってください。</p>
+            <h3 class="text-base sm:text-lg font-bold text-slate-800 mb-1">名護商工 Google ログイン</h3>
+            <p id="domainNoticeText" class="text-xs text-slate-500 mb-5">@nago-th.open.ed.jp アカウントでログインしてください。</p>
 
-            <div class="space-y-3.5">
-                <div class="flex justify-center w-full min-h-[40px]">
-                    <div id="g_id_signin_btn" class="w-full flex justify-center"></div>
-                </div>
-
-                <button onclick="loginWithLine()" class="w-full py-2.5 rounded-xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-xs flex items-center justify-center space-x-2 transition shadow-md">
-                    <i data-lucide="message-square" class="w-4 h-4"></i>
-                    <span>LINEでログイン</span>
-                </button>
-
-                <div class="pt-3 border-t border-slate-200">
-                    <p class="text-[11px] font-medium text-slate-500 mb-1.5">管理者用パスコード</p>
-                    <div class="flex gap-2">
-                        <input type="password" id="adminPasscodeInput" placeholder="パスコード" class="flex-1 p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                        <button onclick="loginWithAdminPasscode()" class="px-3.5 py-2.5 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-900 transition shrink-0">
-                            認証
-                        </button>
-                    </div>
-                </div>
+            <div class="flex justify-center w-full min-h-[44px]">
+                <div id="g_id_signin_btn" class="w-full flex justify-center"></div>
             </div>
         </div>
     </div>
@@ -268,11 +248,10 @@
     <!-- JS APPLICATION LOGIC -->
     <script>
         const API_BASE = "https://uminosign.zinn1019t.workers.dev";
-        const LIFF_ID = "2011830749-oBGQ72bz";
         const GOOGLE_CLIENT_ID = "988378587809-g9calu17mv9huuidppdjj74ibimuo7vb.apps.googleusercontent.com";
+        const ALLOWED_DOMAIN = "nago-th.open.ed.jp";
 
         let isGoogleAuthInitialized = false;
-        let isLiffInitialized = false;
 
         let currentState = {
             user: null,
@@ -286,12 +265,10 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             if (window.lucide) lucide.createIcons();
-            loadStoredSession();
 
-            await initLiffAndCheckAuth();
+            loadStoredSession();
             initGoogleAuth();
 
-            // トークンが存在するログイン済み状態の場合のみサーバー検証を実行
             if (currentState.token) {
                 await verifySessionWithServer();
             }
@@ -336,17 +313,6 @@
             }
         }
 
-        function getDisplayAvatarUrl(user) {
-            if (!user) return 'https://placehold.co/80x80/0284c7/ffffff?text=U';
-            if (user.linePicture || user.line_picture_url) {
-                return user.linePicture || user.line_picture_url;
-            }
-            if (user.googlePicture || user.google_picture_url) {
-                return user.googlePicture || user.google_picture_url;
-            }
-            return user.picture || user.avatar_url || 'https://placehold.co/80x80/0284c7/ffffff?text=U';
-        }
-
         function initGoogleAuth() {
             if (typeof google === 'undefined' || !google.accounts) return;
 
@@ -355,6 +321,7 @@
                     google.accounts.id.initialize({
                         client_id: GOOGLE_CLIENT_ID,
                         callback: handleGoogleCallback,
+                        hosted_domain: ALLOWED_DOMAIN,
                         auto_prompt: false
                     });
                     isGoogleAuthInitialized = true;
@@ -378,42 +345,6 @@
             }
         }
 
-        async function initLiffAndCheckAuth() {
-            if (typeof liff === 'undefined' || !LIFF_ID) {
-                console.warn("LINE SDK is unavailable in this network environment. Skipping LIFF init.");
-                return;
-            }
-
-            try {
-                await liff.init({ liffId: LIFF_ID });
-                isLiffInitialized = true;
-
-                if (liff.isLoggedIn()) {
-                    const profile = await liff.getProfile();
-                    const lineAccessToken = liff.getAccessToken();
-
-                    currentState.authType = 'line';
-                    currentState.token = `LINE_TOKEN:${lineAccessToken}`;
-                    
-                    currentState.user = {
-                        ...(currentState.user || {}),
-                        name: profile.displayName,
-                        linePicture: profile.pictureUrl,
-                        role: currentState.user?.role || 'GENERAL'
-                    };
-
-                    saveSession();
-                    updateUserUI();
-
-                    if (window.location.search) {
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    }
-                }
-            } catch (err) {
-                console.error("LIFF Init / Auth Failed:", err);
-            }
-        }
-
         function openLoginModal() {
             const modal = document.getElementById('loginModal');
             if (modal) modal.classList.remove('hidden');
@@ -429,14 +360,6 @@
 
         function toggleAuthAction() {
             if (currentState.authType !== 'guest') {
-                if (currentState.authType === 'line' && typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                    if (liff.isInClient()) {
-                        liff.closeWindow();
-                        return;
-                    } else {
-                        liff.logout();
-                    }
-                }
                 currentState.user = null;
                 currentState.authType = 'guest';
                 currentState.token = '';
@@ -448,59 +371,40 @@
             }
         }
 
-        async function verifySessionWithServer() {
-            if (!currentState.token) return;
-            try {
-                const res = await fetch(`${API_BASE}/api/auth/verify`, { headers: getAuthHeaders() });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.authenticated && data.user) {
-                        currentState.user = {
-                            ...currentState.user,
-                            role: data.user.role,
-                            name: data.user.name || currentState.user?.name,
-                            line_picture_url: data.user.line_picture_url || currentState.user?.linePicture,
-                            google_picture_url: data.user.google_picture_url || currentState.user?.googlePicture,
-                            avatar_url: data.user.avatar_url
-                        };
-                        saveSession();
-                        updateUserUI();
-                    }
-                } else if (res.status === 401) {
-                    currentState.user = null;
-                    currentState.authType = 'guest';
-                    currentState.token = '';
-                    localStorage.removeItem('uminosign_auth');
-                    updateUserUI();
-                }
-            } catch (err) {
-                console.error("Session verification failed:", err);
-            }
-        }
-
         async function handleGoogleCallback(response) {
             try {
                 const token = `GOOGLE_TOKEN:${response.credential}`;
-                currentState.authType = 'google';
-                currentState.token = token;
-
+                
                 const base64Url = response.credential.split('.')[1];
                 const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
                 const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
                 const payload = JSON.parse(jsonPayload);
 
-                const verifyRes = await fetch(`${API_BASE}/api/auth/verify`, { headers: getAuthHeaders() });
-                let serverUser = {};
-                if (verifyRes.ok) {
-                    const data = await verifyRes.json();
-                    serverUser = data.user || {};
+                const userEmail = (payload.email || '').toLowerCase();
+                const userDomain = userEmail.split('@')[1];
+
+                if (userDomain !== ALLOWED_DOMAIN.toLowerCase()) {
+                    alert(`アクセスできません。\n@${ALLOWED_DOMAIN} のアカウントを利用してください。`);
+                    return;
                 }
 
+                currentState.authType = 'google';
+                currentState.token = token;
+
+                const verifyRes = await fetch(`${API_BASE}/api/auth/verify`, { headers: getAuthHeaders() });
+                if (!verifyRes.ok) {
+                    alert("認証エラー：指定された組織アカウントではありません。");
+                    currentState.token = '';
+                    return;
+                }
+
+                const data = await verifyRes.json();
+                const serverUser = data.user || {};
+
                 currentState.user = {
-                    ...(currentState.user || {}),
                     name: serverUser.name || payload.name || payload.email,
-                    googlePicture: payload.picture || serverUser.avatar_url,
-                    line_picture_url: serverUser.line_picture_url || currentState.user?.linePicture,
+                    email: userEmail,
+                    avatar_url: serverUser.avatar_url || payload.picture,
                     role: serverUser.role || 'GENERAL'
                 };
 
@@ -515,67 +419,32 @@
             }
         }
 
-        async function loginWithLine() {
-            if (typeof liff === 'undefined' || !LIFF_ID) {
-                alert("LINE SDKが読み込まれていないか、LIFF IDが設定されていません。Googleログインをご利用ください。");
-                return;
-            }
-
-            try {
-                if (!isLiffInitialized) {
-                    await liff.init({ liffId: LIFF_ID });
-                    isLiffInitialized = true;
-                }
-
-                // 1. 未ログインの場合はLINE認証画面に遷移させて処理を終了（401エラーAPI呼び出しを防ぐ）
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                    return; // 重要: ここで即時リターンする
-                }
-
-                // 2. ログイン完了後（リダイレクト復帰後）のみ、セッションの確認とデータ取得を行う
-                await initLiffAndCheckAuth();
-                await verifySessionWithServer();
-                await fetchDashboardData();
-                closeLoginModal();
-
-            } catch (e) {
-                console.error("LINE Login Error:", e);
-                alert(`LINEログインの開始に失敗しました:\n${e.message || e}`);
-            }
-        }
-
-        async function loginWithAdminPasscode() {
-            const passcode = document.getElementById('adminPasscodeInput').value.trim();
-            if (!passcode) return;
-
-            const token = `ADMIN:${passcode}`;
-            currentState.token = token;
-
+        async function verifySessionWithServer() {
+            if (!currentState.token) return;
             try {
                 const res = await fetch(`${API_BASE}/api/auth/verify`, { headers: getAuthHeaders() });
                 if (res.ok) {
                     const data = await res.json();
-                    currentState.authType = 'admin';
-                    currentState.user = {
-                        name: data.user.name || '管理者',
-                        picture: data.user.avatar_url || 'https://placehold.co/80x80/0f172a/ffffff?text=A',
-                        role: data.user.role || 'ADMIN'
-                    };
-                    saveSession();
-                    updateUserUI();
-                    closeLoginModal();
-                    fetchDashboardData();
-                    sendLoginLog(currentState.user.name, 'パスコード認証');
+                    if (data.authenticated && data.user) {
+                        currentState.user = {
+                            ...currentState.user,
+                            role: data.user.role,
+                            name: data.user.name || currentState.user?.name,
+                            avatar_url: data.user.avatar_url || currentState.user?.avatar_url
+                        };
+                        saveSession();
+                        updateUserUI();
+                    }
                 } else {
-                    alert("パスコードが正しくありません。");
+                    currentState.user = null;
+                    currentState.authType = 'guest';
                     currentState.token = '';
+                    localStorage.removeItem('uminosign_auth');
+                    updateUserUI();
                 }
-            } catch (e) {
-                alert("認証エラーが発生しました。");
-                currentState.token = '';
+            } catch (err) {
+                console.error("Session verification failed:", err);
             }
-            document.getElementById('adminPasscodeInput').value = '';
         }
 
         async function sendLoginLog(userName, loginType) {
@@ -624,11 +493,10 @@
 
             if (currentState.authType !== 'guest' && currentState.user) {
                 userNameEl.innerText = currentState.user.name || 'ユーザー';
-                userAvatarEl.src = getDisplayAvatarUrl(currentState.user);
+                userAvatarEl.src = currentState.user.avatar_url || 'https://placehold.co/80x80/0284c7/ffffff?text=U';
                 roleBadgeEl.innerText = currentState.user.role || 'USER';
 
-                const authLabel = currentState.authType === 'google' ? 'Google' : currentState.authType === 'line' ? 'LINE' : 'パスコード';
-                authSourceEl.innerHTML = `<span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 inline-block shrink-0"></span> ${authLabel} 認証済`;
+                authSourceEl.innerHTML = `<span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 inline-block shrink-0"></span> Google 認証済`;
                 statRoleTextEl.innerText = currentState.user.role === 'ADMIN' ? '管理者' : '一般';
 
                 authBtnText.innerText = "ログアウト";
