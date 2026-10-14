@@ -321,8 +321,7 @@
                     google.accounts.id.initialize({
                         client_id: GOOGLE_CLIENT_ID,
                         callback: handleGoogleCallback,
-                        hosted_domain: ALLOWED_DOMAIN,
-                        auto_prompt: false
+                        auto_prompt: false // hosted_domain を外して組織管理者の承認エラーを防止
                     });
                     isGoogleAuthInitialized = true;
                 }
@@ -383,6 +382,7 @@
                 const userEmail = (payload.email || '').toLowerCase();
                 const userDomain = userEmail.split('@')[1];
 
+                // フロントエンド側での厳密なドメインチェック
                 if (userDomain !== ALLOWED_DOMAIN.toLowerCase()) {
                     alert(`アクセスできません。\n@${ALLOWED_DOMAIN} のアカウントを利用してください。`);
                     return;
