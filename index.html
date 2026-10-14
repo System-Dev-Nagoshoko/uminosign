@@ -26,9 +26,6 @@
         }
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
         body {
@@ -196,18 +193,34 @@
         </div>
     </main>
 
-    <!-- LOGIN MODAL (Google専用) -->
+    <!-- LOGIN MODAL (メール認証コード方式) -->
     <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md hidden">
         <div class="bg-white/95 w-[92vw] max-w-[380px] rounded-2xl p-5 sm:p-6 border border-white/50 shadow-2xl relative text-center">
             <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
 
-            <h3 class="text-base sm:text-lg font-bold text-slate-800 mb-1">名護商工 Google ログイン</h3>
-            <p id="domainNoticeText" class="text-xs text-slate-500 mb-5">@nago-th.open.ed.jp アカウントでログインしてください。</p>
+            <h3 class="text-base sm:text-lg font-bold text-slate-800 mb-1">メール認証ログイン</h3>
+            <p class="text-xs text-slate-500 mb-4">@nago-th.open.ed.jp のメールアドレスを入力してください。</p>
 
-            <div class="flex justify-center w-full min-h-[44px]">
-                <div id="g_id_signin_btn" class="w-full flex justify-center"></div>
+            <!-- Step 1: メールアドレス入力 -->
+            <div id="emailStep" class="space-y-3">
+                <input type="email" id="authEmailInput" placeholder="example@nago-th.open.ed.jp" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <button id="sendCodeBtn" onclick="sendAuthCode()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-sky-500 text-white font-bold text-xs hover:from-brand-700 hover:to-sky-600 transition shadow-md flex items-center justify-center gap-1.5">
+                    <span>認証コードを送信</span>
+                </button>
+            </div>
+
+            <!-- Step 2: 認証コード入力 -->
+            <div id="codeStep" class="space-y-3 hidden">
+                <p class="text-[11px] text-emerald-600 font-semibold">認証コードを送信しました</p>
+                <input type="text" id="authCodeInput" placeholder="6桁の認証コード" maxlength="6" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs text-center font-mono tracking-widest focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <button id="verifyCodeBtn" onclick="verifyAuthCode()" class="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition shadow-md">
+                    ログイン
+                </button>
+                <button onclick="resetAuthStep()" class="w-full text-[11px] text-slate-400 underline mt-1">
+                    メールアドレスを入力し直す
+                </button>
             </div>
         </div>
     </div>
@@ -248,10 +261,7 @@
     <!-- JS APPLICATION LOGIC -->
     <script>
         const API_BASE = "https://uminosign.zinn1019t.workers.dev";
-        const GOOGLE_CLIENT_ID = "988378587809-g9calu17mv9huuidppdjj74ibimuo7vb.apps.googleusercontent.com";
         const ALLOWED_DOMAIN = "nago-th.open.ed.jp";
-
-        let isGoogleAuthInitialized = false;
 
         let currentState = {
             user: null,
@@ -267,7 +277,6 @@
             if (window.lucide) lucide.createIcons();
 
             loadStoredSession();
-            initGoogleAuth();
 
             if (currentState.token) {
                 await verifySessionWithServer();
@@ -313,48 +322,21 @@
             }
         }
 
-        function initGoogleAuth() {
-            if (typeof google === 'undefined' || !google.accounts) return;
-
-            try {
-                if (!isGoogleAuthInitialized) {
-                    google.accounts.id.initialize({
-                        client_id: GOOGLE_CLIENT_ID,
-                        callback: handleGoogleCallback,
-                        auto_prompt: false // hosted_domain を外して組織管理者の承認エラーを防止
-                    });
-                    isGoogleAuthInitialized = true;
-                }
-
-                const btnContainer = document.getElementById('g_id_signin_btn');
-                if (btnContainer) {
-                    btnContainer.innerHTML = '';
-                    google.accounts.id.renderButton(btnContainer, {
-                        type: 'standard',
-                        size: 'large',
-                        theme: 'outline',
-                        text: 'sign_in_with',
-                        shape: 'rectangular',
-                        logo_alignment: 'left',
-                        width: 280
-                    });
-                }
-            } catch (e) {
-                console.warn("Google Auth Init Warning:", e);
-            }
-        }
-
         function openLoginModal() {
             const modal = document.getElementById('loginModal');
             if (modal) modal.classList.remove('hidden');
-            setTimeout(() => {
-                initGoogleAuth();
-            }, 50);
         }
 
         function closeLoginModal() {
             const modal = document.getElementById('loginModal');
             if (modal) modal.classList.add('hidden');
+            resetAuthStep();
+        }
+
+        function resetAuthStep() {
+            document.getElementById('emailStep').classList.remove('hidden');
+            document.getElementById('codeStep').classList.add('hidden');
+            document.getElementById('authCodeInput').value = '';
         }
 
         function toggleAuthAction() {
@@ -370,52 +352,81 @@
             }
         }
 
-        async function handleGoogleCallback(response) {
+        async function sendAuthCode() {
+            const email = document.getElementById('authEmailInput').value.trim();
+            const btn = document.getElementById('sendCodeBtn');
+
+            if (!email.toLowerCase().endsWith(`@${ALLOWED_DOMAIN}`)) {
+                alert(`@${ALLOWED_DOMAIN} のメールアドレスを入力してください。`);
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "送信中...";
+
             try {
-                const token = `GOOGLE_TOKEN:${response.credential}`;
-                
-                const base64Url = response.credential.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-                const payload = JSON.parse(jsonPayload);
+                const res = await fetch(`${API_BASE}/api/auth/send-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
 
-                const userEmail = (payload.email || '').toLowerCase();
-                const userDomain = userEmail.split('@')[1];
-
-                // フロントエンド側での厳密なドメインチェック
-                if (userDomain !== ALLOWED_DOMAIN.toLowerCase()) {
-                    alert(`アクセスできません。\n@${ALLOWED_DOMAIN} のアカウントを利用してください。`);
-                    return;
+                if (res.ok) {
+                    document.getElementById('emailStep').classList.add('hidden');
+                    document.getElementById('codeStep').classList.remove('hidden');
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    alert(data.error || data.message || "送信に失敗しました。");
                 }
-
-                currentState.authType = 'google';
-                currentState.token = token;
-
-                const verifyRes = await fetch(`${API_BASE}/api/auth/verify`, { headers: getAuthHeaders() });
-                if (!verifyRes.ok) {
-                    alert("認証エラー：指定された組織アカウントではありません。");
-                    currentState.token = '';
-                    return;
-                }
-
-                const data = await verifyRes.json();
-                const serverUser = data.user || {};
-
-                currentState.user = {
-                    name: serverUser.name || payload.name || payload.email,
-                    email: userEmail,
-                    avatar_url: serverUser.avatar_url || payload.picture,
-                    role: serverUser.role || 'GENERAL'
-                };
-
-                saveSession();
-                updateUserUI();
-                closeLoginModal();
-                fetchDashboardData();
-                sendLoginLog(currentState.user.name, 'Google');
             } catch (e) {
-                console.error("Google Auth Error:", e);
-                alert("Googleログイン処理に失敗しました。");
+                console.error("Send code error:", e);
+                alert("通信エラーが発生しました。");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "認証コードを送信";
+            }
+        }
+
+        async function verifyAuthCode() {
+            const email = document.getElementById('authEmailInput').value.trim();
+            const code = document.getElementById('authCodeInput').value.trim();
+            const btn = document.getElementById('verifyCodeBtn');
+
+            if (!code || code.length !== 6) {
+                alert("6桁の認証コードを入力してください。");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "検証中...";
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/verify-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, code })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    currentState.authType = 'email';
+                    currentState.token = data.token;
+                    currentState.user = data.user;
+
+                    saveSession();
+                    updateUserUI();
+                    closeLoginModal();
+                    fetchDashboardData();
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    alert(data.error || data.message || "コードが一致しないか期限切れです。");
+                }
+            } catch (e) {
+                console.error("Verify code error:", e);
+                alert("認証処理エラーが発生しました。");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "ログイン";
             }
         }
 
@@ -444,18 +455,6 @@
                 }
             } catch (err) {
                 console.error("Session verification failed:", err);
-            }
-        }
-
-        async function sendLoginLog(userName, loginType) {
-            try {
-                await fetch(`${API_BASE}/api/logs`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ user_name: userName, login_type: loginType })
-                });
-            } catch (e) {
-                console.error("Log error:", e);
             }
         }
 
@@ -496,7 +495,7 @@
                 userAvatarEl.src = currentState.user.avatar_url || 'https://placehold.co/80x80/0284c7/ffffff?text=U';
                 roleBadgeEl.innerText = currentState.user.role || 'USER';
 
-                authSourceEl.innerHTML = `<span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 inline-block shrink-0"></span> Google 認証済`;
+                authSourceEl.innerHTML = `<span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 inline-block shrink-0"></span> メール認証済`;
                 statRoleTextEl.innerText = currentState.user.role === 'ADMIN' ? '管理者' : '一般';
 
                 authBtnText.innerText = "ログアウト";
@@ -583,7 +582,7 @@
             if (tab === 'tasks') renderTasksView(container);
             else if (tab === 'hotels') renderHotelsView(container);
             else if (tab === 'logs') renderLogsView(container);
-            
+
             if (window.lucide) lucide.createIcons();
         }
 
